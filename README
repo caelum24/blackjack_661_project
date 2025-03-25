@@ -1,0 +1,1 @@
+This project is based on using reinforcement learning to train a blackjack agent that can learn to play blackjack, comparing the performance of q-learning with a state lookup diagram and Deep Q-learning with a broader state space
