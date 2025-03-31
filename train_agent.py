@@ -9,7 +9,13 @@ import matplotlib.pyplot as plt
 from environment import BlackjackEnv 
 from DQNAgent import DQNAgent
 from hyperparameters import HyperParameters
+"""
+Train agent and evaluate agent code. Import and use directly to print information and
+get the accuracy returned. Hyperparameters and gathered from the hyperparameters file. 
 
+Train agent is set up to run with the DQNAgent for now, might need to make modifications to work
+with other models. 
+"""
 def train_agent(episodes=10000, update_target_every=100, print_every=100, agent=DQNAgent):
     env = BlackjackEnv()
     original_state_size = 6

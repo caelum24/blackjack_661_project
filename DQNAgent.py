@@ -10,7 +10,10 @@ from environment import BlackjackEnv
 from replay_buffer import ReplayBuffer
 from hyperparameters import HyperParameters
 
-
+"""
+NN for agent. Currently just 3 FC layers w/ RELUs. To use import Train Agent and call it with 
+agent = DQNAgent. 
+"""
 
 class DQN(nn.Module):
     def __init__(self, state_size, action_size):

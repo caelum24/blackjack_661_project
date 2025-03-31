@@ -1,7 +1,10 @@
 from collections import deque
 import random
 import numpy as np
-
+"""
+Replay buffer to store past states. Import and use the capacity to control how many past states
+are saved. 
+"""
 class ReplayBuffer:
     def __init__(self, capacity):
         self.buffer = deque(maxlen=capacity)
