@@ -9,5 +9,5 @@ class HyperParameters:
     BATCH_SIZE = 64
     EPSILON_START = 1.0
     EPSILON_MIN = 0.05
-    EPSILON_DECAY = 0.995
+    EPSILON_DECAY = 0.999
     LEARNING_RATE = 0.001

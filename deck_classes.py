@@ -46,7 +46,7 @@ class Deck:
 
     def deal(self):
         if len(self.cards) <= self.num_decks * 52 * 0.25:  # Reshuffle when 75% of cards are used
-            print("Reshuffling the deck...")
+            # print("Reshuffling the deck...")
             self.cards = []
             self.create_deck()
             self.shuffle()

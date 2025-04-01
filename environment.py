@@ -50,7 +50,7 @@ class BlackjackEnv:
         self.player_hand = []
         self.dealer_hand = []
         self.bankroll = INITIAL_BANKROLL
-        self.current_bet = 0
+        self.current_bet = 1
         self.done = False
         self.doubled = False
 
@@ -200,11 +200,12 @@ class BlackjackEnv:
 
     def get_state(self):
         # get state for full count
+
         if self.count_type == "full":
             return self.get_full_count_state()
         
         # get state for no count with simple state
-        if self.count_type == "None":
+        if self.count_type == "empty":
             return self.get_simplified_state()
         
         # get state for card counting
