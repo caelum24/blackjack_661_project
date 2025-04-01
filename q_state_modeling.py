@@ -14,8 +14,6 @@ def model(agent):
     Wrapper to create the strategy table and compare agent results
     Pass the trained agent and this module will print the strategy comparisons
     '''
-        
-    DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     def create_basic_strategy_table():
         """Create blackjack basic strategy tables"""
@@ -116,7 +114,7 @@ def model(agent):
 
         # Prepare card percentages for synthetic states
         # For comparison purposes, we'll use a balanced deck (equal distribution)
-        balanced_card_percentages = np.ones(10) / 10  # 10% for each card type
+        # balanced_card_percentages = np.ones(10) / 10  # 10% for each card type
 
         # Prepare the results
         print("\n\n===== COMPARING AGENT VS BASIC STRATEGY =====\n")
@@ -130,15 +128,14 @@ def model(agent):
         print("-" * 75)
 
         # Prepare matrix for visualization
-        comparison_matrix = np.zeros((18, 10))
+        comparison_matrix = np.zeros((13, 10)) # TODO -> changed this from 18 to 13
 
         # Check each combination
-        for player_total in range(8, 26):  # 8 to 25
+        for player_total in range(8, 21):  # 8 to 21 #TODO -> changed this from 25 to 21
             for dealer_upcard in range(2, 12):  # 2 to 11 (Ace)
                 # Create a synthetic state with card percentages
-                # [player_sum, dealer_up_card, usable_ace, can_double, normalized_bankroll, normalized_bet]
-                base_state = np.array([player_total, dealer_upcard, 0, 1, 1.0, 0.5])
-                state = np.concatenate([base_state, balanced_card_percentages])
+                # [player_sum, dealer_up_card, usable_ace, can_double]
+                state = np.array([player_total, dealer_upcard, 0, 1])
 
                 # Get basic strategy action
                 if player_total <= 25 and player_total >= 8:
@@ -153,17 +150,7 @@ def model(agent):
                 if state[3] == 1:  # Can double
                     valid_actions.append(2)
 
-                state_tensor = torch.FloatTensor(state).unsqueeze(0).to(DEVICE)
-                with torch.no_grad():
-                    action_probs = agent.policy_net(state_tensor).cpu().data.numpy()[0]
-
-                # Mask invalid actions
-                masked_values = np.copy(action_probs)
-                for i in range(len(action_probs)):
-                    if i not in valid_actions:
-                        masked_values[i] = -np.inf
-
-                agent_action = np.argmax(masked_values)
+                agent_action = agent.act(state, valid_actions=valid_actions, e_greedy = False)
 
                 # Compare actions
                 match = agent_action == basic_action
@@ -177,14 +164,14 @@ def model(agent):
                     print(f"{player_total:11d} | {dealer_upcard:13d} | {action_names[basic_action]:14s} | {action_names[agent_action]:14s} | {'✓' if match else '✗'}")
 
         # Plot hard totals comparison
-        plt.subplot(3, 1, 1)
+        plt.subplot(1, 3, 1)
         plt.imshow(comparison_matrix, cmap='RdYlGn', vmin=0, vmax=1)
-        plt.colorbar(ticks=[0, 1], label='Match (1) vs Mismatch (0)')
+        # plt.colorbar(ticks=[0, 1], label='Match (1) vs Mismatch (0)')
         plt.title('Hard Totals: Agent vs Basic Strategy')
         plt.xlabel('Dealer Upcard (2-A)')
         plt.ylabel('Player Total (8-25+)')
         plt.xticks(range(10), ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'A'])
-        plt.yticks(range(18), ['8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23', '24', '25+'])
+        plt.yticks(range(13), ['8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20']) #TODO -> changed this from 18 to 13
 
         # 2. SOFT TOTALS
         print("\nSOFT TOTALS COMPARISON:")
@@ -200,9 +187,8 @@ def model(agent):
                 player_total = 11 + ace_with  # A=11 + second card
 
                 # Create a synthetic state
-                # [player_sum, dealer_up_card, usable_ace, can_double, normalized_bankroll, normalized_bet]
-                base_state = np.array([player_total, dealer_upcard, 1, 1, 1.0, 0.5])
-                state = np.concatenate([base_state, balanced_card_percentages])
+                # [player_sum, dealer_up_card, usable_ace, can_double]
+                state = np.array([player_total, dealer_upcard, 1, 1])
 
                 # Get basic strategy action
                 row_idx = ace_with - 2  # A,2 starts at index 0
@@ -214,21 +200,10 @@ def model(agent):
                 if state[3] == 1:  # Can double
                     valid_actions.append(2)
 
-                state_tensor = torch.FloatTensor(state).unsqueeze(0).to(DEVICE)
-                with torch.no_grad():
-                    action_probs = agent.policy_net(state_tensor).cpu().data.numpy()[0]
-
-                # Mask invalid actions
-                masked_values = np.copy(action_probs)
-                for i in range(len(action_probs)):
-                    if i not in valid_actions:
-                        masked_values[i] = -np.inf
-
-                agent_action = np.argmax(masked_values)
+                agent_action = agent.act(state, valid_actions=valid_actions, e_greedy = False)
 
                 # Compare actions
                 match = agent_action == basic_action
-
                 # Update comparison matrix for visualization
                 soft_comparison_matrix[row_idx][col_idx] = 1 if match else 0
 
@@ -236,9 +211,9 @@ def model(agent):
                 print(f"A,{ace_with:8d} | {dealer_upcard:13d} | {action_names[basic_action]:14s} | {action_names[agent_action]:14s} | {'✓' if match else '✗'}")
 
         # Plot soft totals comparison
-        plt.subplot(3, 1, 2)
+        plt.subplot(1, 3, 2)
         plt.imshow(soft_comparison_matrix, cmap='RdYlGn', vmin=0, vmax=1)
-        plt.colorbar(ticks=[0, 1], label='Match (1) vs Mismatch (0)')
+        # plt.colorbar(ticks=[0, 1], label='Match (1) vs Mismatch (0)')
         plt.title('Soft Totals: Agent vs Basic Strategy')
         plt.xlabel('Dealer Upcard (2-A)')
         plt.ylabel('Player Hand')
@@ -265,8 +240,7 @@ def model(agent):
 
                 # Create a synthetic state
                 # [player_sum, dealer_up_card, usable_ace, can_double, normalized_bankroll, normalized_bet]
-                base_state = np.array([player_total, dealer_upcard, usable_ace, 1, 1.0, 0.5])
-                state = np.concatenate([base_state, balanced_card_percentages])
+                state = np.array([player_total, dealer_upcard, usable_ace, 1.0])
 
                 # Get basic strategy action
                 row_idx = pair_card - 2  # 2,2 starts at index 0
@@ -286,24 +260,14 @@ def model(agent):
                     else:
                         adjusted_basic_action = 0  # Hit
 
-                # Get agent action
+               # Get agent action
                 valid_actions = [0, 1]  # Hit and stand are always valid
                 if state[3] == 1:  # Can double
                     valid_actions.append(2)
 
-                state_tensor = torch.FloatTensor(state).unsqueeze(0).to(DEVICE)
-                with torch.no_grad():
-                    action_probs = agent.policy_net(state_tensor).cpu().data.numpy()[0]
+                agent_action = agent.act(state, valid_actions=valid_actions, e_greedy = False)
 
-                # Mask invalid actions
-                masked_values = np.copy(action_probs)
-                for i in range(len(action_probs)):
-                    if i not in valid_actions:
-                        masked_values[i] = -np.inf
-
-                agent_action = np.argmax(masked_values)
-
-                # Compare actions (using adjusted basic action)
+                # Compare actions
                 match = agent_action == adjusted_basic_action
 
                 # Update comparison matrix for visualization
@@ -315,9 +279,9 @@ def model(agent):
                 print(f"{pair_name:10s} | {dealer_upcard:13d} | {basic_action_name:14s} | {action_names[agent_action]:14s} | {'✓' if match else '✗'}")
 
         # Plot pairs comparison
-        plt.subplot(3, 1, 3)
+        plt.subplot(1, 3, 3)
         plt.imshow(pairs_comparison_matrix, cmap='RdYlGn', vmin=0, vmax=1)
-        plt.colorbar(ticks=[0, 1], label='Match (1) vs Mismatch (0)')
+        # plt.colorbar(ticks=[0, 1], label='Match (1) vs Mismatch (0)')
         plt.title('Pairs: Agent vs Basic Strategy (Adjusted for No Split)')
         plt.xlabel('Dealer Upcard (2-A)')
         plt.ylabel('Player Pair')
@@ -342,4 +306,3 @@ def model(agent):
         return hard_accuracy, soft_accuracy, pairs_accuracy
     
     compare_with_basic_strategy(agent)
-

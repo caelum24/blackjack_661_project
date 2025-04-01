@@ -80,6 +80,6 @@ class QStateAgent:
         # update the q_table to reflect the new value
         self.q_table[state][action] = new_q_value
 
-        self.epsilon = max(self.epsilon * (self.epsilon_decay+.0009), self.epsilon_min)
+        self.epsilon = max(self.epsilon - 0.000001, self.epsilon_min)
 
         return loss

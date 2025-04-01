@@ -245,7 +245,9 @@ class BlackjackEnv:
         else: # "uston"
             current_count = self.uston_apc_count
 
-        return np.array([player_sum, dealer_up_card, usable_ace, can_double, current_count/self.deck.num_decks])
+        # could change current count, by modifying it to /remaining decks, which would help scaling out slightly
+        
+        return np.array([player_sum, dealer_up_card, usable_ace, can_double, current_count/self.deck.num_decks]) 
 
     def get_full_count_state(self):
         """
