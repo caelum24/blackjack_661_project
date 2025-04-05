@@ -1,4 +1,4 @@
-from better_environment import BlackjackEnv
+from split_environment import BlackjackEnv
 
 
 env = BlackjackEnv(count_type="empty")
