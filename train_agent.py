@@ -130,7 +130,7 @@ def evaluate_agent(agent, env, episodes=1000):
 
         episode_reward = 0
         done = False
-
+        #TODO -> if our environment returns 1, we need to store that for later so that we can go back and find the reward for each one
         while not done:
             # Determine valid actions
             valid_actions = [0, 1]  # Hit and stand are always valid
