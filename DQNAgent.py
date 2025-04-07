@@ -64,8 +64,8 @@ class DQNAgent:
     def update_target_network(self):
         self.target_net.load_state_dict(self.policy_net.state_dict())
 
-    def remember(self, state, action, reward, next_state, done):
-        self.memory.push(state, action, reward, next_state, done)
+    def remember(self, state, action, reward, next_state, split_state, done):
+        self.memory.push(state, action, reward, next_state, split_state, done)
 
     def act(self, state):
 
@@ -118,23 +118,29 @@ class DQNAgent:
         if len(self.memory) < BATCH_SIZE:
             return
 
-        states, actions, rewards, next_states, dones = self.memory.sample(BATCH_SIZE)
+        states, actions, rewards, next_states_1, split_states, dones = self.memory.sample(BATCH_SIZE)
 
         states = torch.FloatTensor(states).to(self.DEVICE)
         actions = torch.LongTensor(actions).to(self.DEVICE)
         rewards = torch.FloatTensor(rewards).to(self.DEVICE)
-        next_states = torch.FloatTensor(next_states).to(self.DEVICE)
+        next_states_1 = torch.FloatTensor(next_states_1).to(self.DEVICE)
+        split_states = torch.FloatTensor(split_states).to(self.DEVICE)
+        has_next2 = (split_states.abs().sum(dim=1) > 1e-5).float() # checking if next_states_2 is a 0 vector (only non-zero if a split occurred)
         dones = torch.FloatTensor(dones).to(self.DEVICE)
 
         # Compute Q(s_t, a) - the model computes Q(s_t), then we select the columns of actions taken
         q_values = self.policy_net(states).gather(1, actions.unsqueeze(1))
 
         # Compute V(s_{t+1}) for all next states
-        next_q_values = self.target_net(next_states).max(1)[0].detach()
+        #TODO -> print out the outputs to see what they get out of it, why is our reward system diverging
+        next_q_values1 = self.target_net(next_states_1).max(1)[0].detach()
+        next_q_values2 = self.target_net(split_states).max(1)[0].detach()
 
         # Compute the expected Q values
-        expected_q_values = rewards + (1 - dones) * self.gamma * next_q_values
+        combined_next_q_values = next_q_values1 + has_next2 * next_q_values2
 
+        # expected_q_values = rewards + (1 - dones) * self.gamma * next_q_values
+        expected_q_values = rewards + (1 - dones) * self.gamma * combined_next_q_values
         # Compute Huber loss
         loss = F.smooth_l1_loss(q_values.squeeze(), expected_q_values)
 
@@ -148,7 +154,8 @@ class DQNAgent:
 
         # Update epsilon for exploration
         if self.epsilon > self.epsilon_min:
-            self.epsilon *= self.epsilon_decay
+            # self.epsilon *= self.epsilon_decay
+            pass
 
         return loss.item()
     
