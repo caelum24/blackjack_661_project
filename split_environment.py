@@ -188,11 +188,12 @@ class BlackjackEnv:
         # deal a new card to the player hand
         new_card1 = self.deck.deal()
         self._update_card_counts(new_card1.value)
-        new_card2 = self.deck.deal()
-        self._update_card_counts(new_card2.value)
+        # new_card2 = self.deck.deal()
+        # self._update_card_counts(new_card2.value)
 
         new_hand1 = [card1, new_card1]
-        new_hand2 = [card2, new_card2]
+        # new_hand2 = [card2, new_card2]
+        new_hand2 = [card2]
 
         self.player_hands[self.current_hand_index] = new_hand1
         # insert a hand (in case we do recursive splitting, you recurse down before going to next hand)
@@ -247,6 +248,12 @@ class BlackjackEnv:
             return self._resolve_game()
         else:
             self.current_hand_index += 1
+            
+            # deal 2nd card to player's new split hand
+            player_hand = self.player_hands[self.current_hand_index]
+            new_card2 = self.deck.deal()
+            self._update_card_counts(new_card2.value)
+            player_hand.append(new_card2)
             # return done = 1 to show that the hand is over but the game isn't
             # Important to NOTE that this reward is useless, as we don't know the dealer's result yet
             return self._get_state(), reward, 1
