@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 from environment import BlackjackEnv 
 from replay_buffer import ReplayBuffer
 from hyperparameters import HyperParameters
+from epsilon_decayer import EpsilonDecayer
 
 """
 NN for agent. Currently just 3 FC layers w/ RELUs. To use import Train Agent and call it with 
@@ -16,8 +17,10 @@ agent = DQNAgent.
 """
 
 class DQN(nn.Module):
+
     def __init__(self, state_size, action_size):
         super(DQN, self).__init__()
+
         self.fc1 = nn.Linear(state_size, 64)
         self.fc2 = nn.Linear(64, 64)
         self.fc3 = nn.Linear(64, action_size)
@@ -28,9 +31,21 @@ class DQN(nn.Module):
         return self.fc3(x)
     
 class DQNAgent:
-    def __init__(self, state_size, action_size):
+
+    counting_type_state_size = {"full":15, "empty":5, "hi_lo":6, "zen":6, "uston_apc":6, "ten_count":6}
+
+    def __init__(self, count_type):
+        
+        # TODO -> do we want to include the ability to exclude splitting?
+        if count_type not in ["full", "empty", "hi_lo", "zen", "uston_apc", "ten_count"]:
+            print("count type must be one of", ["full", "empty", "hi_lo", "zen", "uston_apc", "ten_count"])
+            raise ValueError 
+
+        state_size = self.counting_type_state_size[count_type]
+        action_size = 4 # hit, stand, double, split
 
         self.DEVICE = HyperParameters.DEVICE
+        self.count_type = count_type
         self.state_size = state_size
         self.action_size = action_size
         self.memory = ReplayBuffer(HyperParameters.MEMORY_SIZE)
@@ -52,15 +67,19 @@ class DQNAgent:
     def remember(self, state, action, reward, next_state, done):
         self.memory.push(state, action, reward, next_state, done)
 
-    def act(self, state, valid_actions=None):
-        DEVICE = self.DEVICE
-        if valid_actions is None:
-            valid_actions = list(range(self.action_size))
+    def act(self, state):
+
+        # Determine valid actions to ensure model doesn't do something illegal
+        valid_actions = [0, 1]  # Hit and stand are always valid
+        if state[3] == 1:  # Can double
+            valid_actions.append(2)
+        if state[4] == 1:
+            valid_actions.append(3)
 
         if np.random.rand() <= self.epsilon:
             return random.choice(valid_actions)
 
-        state_tensor = torch.FloatTensor(state).unsqueeze(0).to(DEVICE)
+        state_tensor = torch.FloatTensor(state).unsqueeze(0).to(self.DEVICE)
         with torch.no_grad():
             act_values = self.policy_net(state_tensor).cpu().data.numpy()
 
@@ -73,6 +92,7 @@ class DQNAgent:
         return np.argmax(masked_values)
 
     def bet(self, state):
+        #TODO -> this can go away because we're going to have a separate agent for betting
         # Added Kelly Criterion to for the bet factor
         win_prob = 0.3610
         loss_prob = 0.5200
@@ -92,21 +112,19 @@ class DQNAgent:
         #return max(0, min(1, bet_factor))  # Clip to [0, 1]
         return kelly_fraction + 0.01 * np.random.randn()
 
-
     def learn(self):
         BATCH_SIZE = HyperParameters.BATCH_SIZE
-        DEVICE = self.DEVICE
         
         if len(self.memory) < BATCH_SIZE:
             return
 
         states, actions, rewards, next_states, dones = self.memory.sample(BATCH_SIZE)
 
-        states = torch.FloatTensor(states).to(DEVICE)
-        actions = torch.LongTensor(actions).to(DEVICE)
-        rewards = torch.FloatTensor(rewards).to(DEVICE)
-        next_states = torch.FloatTensor(next_states).to(DEVICE)
-        dones = torch.FloatTensor(dones).to(DEVICE)
+        states = torch.FloatTensor(states).to(self.DEVICE)
+        actions = torch.LongTensor(actions).to(self.DEVICE)
+        rewards = torch.FloatTensor(rewards).to(self.DEVICE)
+        next_states = torch.FloatTensor(next_states).to(self.DEVICE)
+        dones = torch.FloatTensor(dones).to(self.DEVICE)
 
         # Compute Q(s_t, a) - the model computes Q(s_t), then we select the columns of actions taken
         q_values = self.policy_net(states).gather(1, actions.unsqueeze(1))
@@ -133,3 +151,10 @@ class DQNAgent:
             self.epsilon *= self.epsilon_decay
 
         return loss.item()
+    
+    def load_model(self, weight_file):
+        self.target_net.load_state_dict(torch.load(weight_file))
+
+    def save_model(self):
+        model_checkpoint = "BJ_agent.pt"
+        torch.save(self.target_net.state_dict(), model_checkpoint)
