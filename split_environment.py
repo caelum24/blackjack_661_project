@@ -321,7 +321,6 @@ class BlackjackEnv:
         # get state for system card counting if not full count
         elif self.count_type != "empty":
             counts = self._get_system_count_state()
-        
         return np.concatenate([basic_state, counts])
     
     def _get_system_count_state(self):
@@ -377,7 +376,7 @@ class BlackjackEnv:
 
         # card percentages is array with percentage counts for: ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'A']
         # all face cards are rolled into 10 for this
-        return np.array([card_percentages])
+        return np.array(card_percentages)
 
     def _resolve_game(self): 
         

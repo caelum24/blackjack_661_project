@@ -47,15 +47,17 @@ def train_agent(episodes=10000, update_target_every=100, print_every=100, agent:
         cumulative_reward = 0
         episode_loss = 0
         steps = 0
+        split_tracker:SplitTracker = None
         # done in [0,1,2] -> 0 = not done, 1 = hand done (for splitting), 2 = completely done
         done = 0
 
-        # TODO -> probably need to store the splits in  different environment to do it properly
         while done != 2:
             # TODO -> need to add some stuff about splitting
             # Take action
             action = agent.act(state)
             next_state, reward, done = env.step(action)
+
+            # TODO -> add in the bonus rewards here
 
             if action == 3:
                 # if splitting, use split tracker to monitor the state of those hands
@@ -68,7 +70,7 @@ def train_agent(episodes=10000, update_target_every=100, print_every=100, agent:
             
             else:
                 # if not splitting, remember the experience for training
-                agent.remember(state, action, reward, next_state, done)
+                agent.remember(state, action, reward, next_state, np.zeros_like(next_state), (done==1 or done==2))
 
             if done == 1:
                 # if just a hand is done... only happens after a split
@@ -83,10 +85,21 @@ def train_agent(episodes=10000, update_target_every=100, print_every=100, agent:
 
             # switch state to the next step
             state = next_state
-            #NOTE -> the cumulative reward is going to be skewed based on the bonus system we implement
-            cumulative_reward += reward
+
         
-        # TODO TODO if agent split during the last game... look at the split tracker get states stuff
+        # add up the rewards of playing the game
+        #NOTE -> the cumulative reward is going to be skewed based on the bonus system we implement
+        cumulative_reward = sum(env.deliver_rewards())
+        
+        # if agent split during the game, store the states that resulted for split training
+        if split_tracker is not None:
+            split_next_hands = split_tracker.get_split_next_hands()
+            for split_state, (ret1_state, ret2_state) in split_next_hands:
+                #TODO -> add in the split bonus rewards here
+                reward = 0
+                action = 3 # 3 for splitting
+                agent.remember(split_state, action, reward, ret1_state, ret2_state, done=False)
+
 
         # Update target network
         if e % update_target_every == 0:
@@ -144,17 +157,15 @@ def evaluate_agent(agent, env, episodes=1000):
     wins = 0
     losses = 0
     pushes = 0
-
+    #TODO -> need to update this to work with the new splitting agent and environment
     for e in range(episodes):
-        state, _, _ = env.reset()
+        state, _, done = env.reset()
 
         # Place a bet
-        bet_size_factor = agent.bet(state)
-        state, _, _ = env.place_bet(bet_size_factor)
+        # bet_size_factor = agent.bet(state)
+        # state, _, _ = env.place_bet(bet_size_factor)
 
         episode_reward = 0
-        done = False
-        #TODO -> if our environment returns 1, we need to store that for later so that we can go back and find the reward for each one
         while not done:
             # Determine valid actions
             valid_actions = [0, 1]  # Hit and stand are always valid
@@ -194,4 +205,8 @@ def evaluate_agent(agent, env, episodes=1000):
     print(f"Push rate: {pushes / episodes:.4f}")
 
     return total_reward / episodes
-    
+
+if __name__ == "__main__":
+
+    agent = DQNAgent(count_type="full")
+    train_agent(episodes=1000, update_target_every=10, print_every=100, agent=agent)
