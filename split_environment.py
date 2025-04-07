@@ -4,8 +4,10 @@ from hyperparameters import HyperParameters
 
 #TODO -> blackjack reward currently 1.5... need to hyperparameterize it for easier use
 #TODO -> make a hyperparameter for how low deck needs to get before shuffling on reset
-
-
+#TODO -> make self.player_bet an input to the reset function so we can simulate our playing agent with our betting agent
+#TODO may want to change the rewrd thing from _next_hand to None or remove it, as you only change hands when done, and 
+#       we don't know the reward yet for a split until after all hands have gone
+#TODO -> need to implement reward structure bonus
 
 class BlackjackEnv:
 
@@ -21,9 +23,8 @@ class BlackjackEnv:
         self.deck = Deck(num_decks=num_decks)
 
         ### BANKROLL STUFF ###
-        # Start with an initial bankroll and a bet size (for training, self.current_bet should either be 1 or 2)
         self.bankroll = HyperParameters.INITIAL_BANKROLL
-        self.current_bet = 1
+        self.player_bet = 1
     
         ### CARD COUNTING STUFF ###
         # ensure the card count type is valid and set it
@@ -72,7 +73,7 @@ class BlackjackEnv:
         ### GAME STATE SETUP ###
         ### ENV keeps track of the hands, bet, and rewards. Agent must keep track of terminal states for split learning
         self.player_hands = [[]]
-        self.player_bet = 1 # TODO -> make this an input to the reset function
+        self.player_bet = 1 
         self.player_reward_magnitudes = [1]
         self.rewards = []
         self.dealer_hand = []
@@ -128,6 +129,16 @@ class BlackjackEnv:
         else:
             raise ValueError(f"SOMETHING ILLEGAL HAS HAPPENED. Action = {action}")
 
+    def get_count(self):
+        if self.count_type == "full":
+            return self._get_full_count_state()
+
+        elif self.count_type == "empty":
+            return np.array([])
+    
+        else: # "hi_lo", "zen", "uston_apc", "ten_count"
+            return self._get_system_count_state()
+        
     def _hit(self):
 
         player_hand = self.player_hands[self.current_hand_index]
@@ -148,7 +159,6 @@ class BlackjackEnv:
         return self._get_state(), 0, 0 
 
     def _stand(self):
-        #TODO may want to change this to None, as you only change when done, and we don't know the rewrd yet
         return self._next_hand(0) 
     
     def _double(self):
@@ -283,7 +293,7 @@ class BlackjackEnv:
     def _can_double(self):
         return 1 if len(self.player_hands[self.current_hand_index]) == 2 else 0
 
-    def _get_state(self): #TODO
+    def _get_state(self):
         player_hand = self.player_hands[self.current_hand_index]
 
         player_sum = self._calculate_hand_value(player_hand)
@@ -307,7 +317,7 @@ class BlackjackEnv:
         
         return np.concatenate([basic_state, counts])
     
-    def _get_system_count_state(self): # TODO
+    def _get_system_count_state(self):
 
         '''
             This state getter gets the states if the card counting method used is one of those
@@ -327,7 +337,7 @@ class BlackjackEnv:
         num_remaining_decks = self.deck.get_decks_remaining() if self.deck.get_decks_remaining() > 0 else self.deck.num_decks
         return np.array([current_count/num_remaining_decks])
 
-    def _get_full_count_state(self): # TODO
+    def _get_full_count_state(self):
         """
         Return the state representation for the RL agent:
         [player_sum, dealer_up_card, usable_ace, can_double, normalized_bankroll, normalized_bet, card percentages]
@@ -362,7 +372,7 @@ class BlackjackEnv:
         # all face cards are rolled into 10 for this
         return np.array([card_percentages])
 
-    def _resolve_game(self): # TODO
+    def _resolve_game(self): 
         
         # finish the dealer hand
         while self._calculate_hand_value(self.dealer_hand) < 17:

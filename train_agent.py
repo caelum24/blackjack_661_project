@@ -6,7 +6,7 @@ import torch.optim as optim
 import torch.nn.functional as F
 from collections import deque
 import matplotlib.pyplot as plt
-from environment import BlackjackEnv 
+from split_environment import BlackjackEnv 
 from DQNAgent import DQNAgent
 from hyperparameters import HyperParameters
 """
@@ -16,7 +16,10 @@ get the accuracy returned. Hyperparameters and gathered from the hyperparameters
 Train agent is set up to run with the DQNAgent for now, might need to make modifications to work
 with other models. 
 """
-def train_agent(episodes=10000, update_target_every=100, print_every=100, agent=DQNAgent):
+
+# TODO -> want to add input reward system for the trainer that is a hyperparameter
+
+def train_agent(episodes=10000, update_target_every=100, print_every=100, agent=DQNAgent()):
     env = BlackjackEnv()
     original_state_size = 6
     card_info_size = 10
