@@ -1,4 +1,6 @@
 
+from torch import cuda
+
 class HyperParameters:
     DECK_COUNT = 6  # Number of decks
     MIN_BET = 1
@@ -11,3 +13,4 @@ class HyperParameters:
     EPSILON_MIN = 0.05
     EPSILON_DECAY = 0.999
     LEARNING_RATE = 0.001
+    DEVICE = "cuda" if cuda.is_available() else "cpu"
