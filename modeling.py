@@ -8,6 +8,7 @@ from collections import deque
 import matplotlib.pyplot as plt
 from environment import BlackjackEnv 
 
+#TODO -> modeling will break for ANY card counting... only works for empty
 
 def model(agent):
     '''
@@ -129,8 +130,8 @@ def model(agent):
         for player_total in range(8, 26):  # 8 to 25
             for dealer_upcard in range(2, 12):  # 2 to 11 (Ace)
                 # Create a synthetic state with simplified features
-                # [player_sum, dealer_up_card, usable_ace, can_double]
-                state = np.array([player_total, dealer_upcard, 0, 1])
+                # [player_sum, dealer_up_card, usable_ace, can_double, can_split]
+                state = np.array([player_total, dealer_upcard, 0, 1, 0])
 
                 # Get basic strategy action
                 if player_total <= 25 and player_total >= 8:
@@ -192,8 +193,8 @@ def model(agent):
                 player_total = 11 + ace_with  # A=11 + second card
 
                 # Create a synthetic state with simplified features
-                # [player_sum, dealer_up_card, usable_ace, can_double]
-                state = np.array([player_total, dealer_upcard, 1, 1])
+                # [player_sum, dealer_up_card, usable_ace, can_double, can_split]
+                state = np.array([player_total, dealer_upcard, 0, 1, 0])
 
                 # Get basic strategy action
                 row_idx = ace_with - 2  # A,2 starts at index 0
@@ -255,8 +256,8 @@ def model(agent):
                     usable_ace = 0
 
                 # Create a synthetic state with simplified features
-                # [player_sum, dealer_up_card, usable_ace, can_double]
-                state = np.array([player_total, dealer_upcard, usable_ace, 1])
+                # [player_sum, dealer_up_card, usable_ace, can_double, can_split]
+                state = np.array([player_total, dealer_upcard, 0, 1, 0])
 
                 # Get basic strategy action
                 row_idx = pair_card - 2  # 2,2 starts at index 0
@@ -336,20 +337,20 @@ def model(agent):
         # Define the test cases
         test_states = [
             # Player 8,8 vs Dealer 10
-            np.array([16, 10, 0, 1]),  # [player_sum, dealer_up_card, usable_ace, can_double]
-            # Player A,1 vs Dealer 9
-            np.array([12, 9, 1, 1]),   # A=11 + 1 = 12, with usable ace
+            np.array([16, 10, 0, 1, 1]),  # [player_sum, dealer_up_card, usable_ace, can_double, can_split]
+            # Player 10,10 vs Dealer 2
+            np.array([20, 2, 0, 1, 1]),
             # Player 9,2 vs Dealer 3
-            np.array([11, 3, 0, 1])    # 9 + 2 = 11
+            np.array([11, 3, 0, 1, 0])    # 9 + 2 = 11
         ]
         
         state_names = [
             "Player 8,8 vs Dealer 10",
-            "Player A,1 vs Dealer 9",
+            "Player 10,10 vs Dealer 2",
             "Player 9,2 vs Dealer 3"
         ]
         
-        action_names = ["Hit", "Stand", "Double"]
+        action_names = ["Hit", "Stand", "Double", "Split"]
         
         # Create a figure for the visualization
         plt.figure(figsize=(15, 5))

@@ -1,4 +1,4 @@
-import torch
+from torch import cuda, device
 
 class HyperParameters:
     DECK_COUNT = 6  # Number of decks
@@ -12,5 +12,5 @@ class HyperParameters:
     EPSILON_MIN = 0.01
     EPSILON_DECAY = 0.98  # Slower epsilon decay
     LEARNING_RATE = 0.0001  # Increased learning rate for faster learning
-    DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    DEVICE = device('cuda' if cuda.is_available() else 'cpu')
     TARGET_UPDATE = 100  # How often to update the target network
