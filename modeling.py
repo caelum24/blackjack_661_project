@@ -331,5 +331,60 @@ def model(agent):
 
         return hard_accuracy, soft_accuracy, pairs_accuracy
     
+    def visualize_action_preferences(agent):
+        """Visualize the model's action preferences for specific game states"""
+        # Define the test cases
+        test_states = [
+            # Player 8,8 vs Dealer 10
+            np.array([16, 10, 0, 1]),  # [player_sum, dealer_up_card, usable_ace, can_double]
+            # Player A,1 vs Dealer 9
+            np.array([12, 9, 1, 1]),   # A=11 + 1 = 12, with usable ace
+            # Player 9,2 vs Dealer 3
+            np.array([11, 3, 0, 1])    # 9 + 2 = 11
+        ]
+        
+        state_names = [
+            "Player 8,8 vs Dealer 10",
+            "Player A,1 vs Dealer 9",
+            "Player 9,2 vs Dealer 3"
+        ]
+        
+        action_names = ["Hit", "Stand", "Double"]
+        
+        # Create a figure for the visualization
+        plt.figure(figsize=(15, 5))
+        
+        # Process each test state
+        for i, (state, name) in enumerate(zip(test_states, state_names)):
+            # Convert state to tensor
+            state_tensor = torch.FloatTensor(state).unsqueeze(0).to(DEVICE)
+            
+            # Get action probabilities
+            with torch.no_grad():
+                action_probs = agent.policy_net(state_tensor, training=False).cpu().data.numpy()[0]
+            
+            # Apply softmax to get probabilities
+            action_probs = np.exp(action_probs) / np.sum(np.exp(action_probs))
+            
+            # Create subplot
+            plt.subplot(1, 3, i+1)
+            bars = plt.bar(action_names, action_probs)
+            
+            # Add value labels on top of bars
+            for bar in bars:
+                height = bar.get_height()
+                plt.text(bar.get_x() + bar.get_width()/2., height,
+                        f'{height:.2f}',
+                        ha='center', va='bottom')
+            
+            plt.title(name)
+            plt.ylabel('Probability')
+            plt.ylim(0, 1)
+        
+        plt.tight_layout()
+        plt.savefig('action_preferences.png')
+        plt.show()
+    
     compare_with_basic_strategy(agent)
+    visualize_action_preferences(agent)
 
