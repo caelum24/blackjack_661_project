@@ -129,7 +129,7 @@ def train_agent(episodes=10000, update_target_every=100, print_every=100, agent:
 
     plt.subplot(1, 3, 2)
     # Use rolling average for smoother curve
-    rolling_avg = np.convolve(reward_history, np.ones(100)/100, mode='valid')
+    rolling_avg = np.convolve(reward_history, np.ones(1000)/1000, mode='valid')
     plt.plot(rolling_avg)
     plt.title('Average Reward (100 episodes)')
     plt.xlabel('Episode')
@@ -138,7 +138,7 @@ def train_agent(episodes=10000, update_target_every=100, print_every=100, agent:
     plt.subplot(1, 3, 3)
     # Use rolling average for loss as well
     if loss_history:
-        rolling_loss = np.convolve(loss_history, np.ones(100)/100, mode='valid')
+        rolling_loss = np.convolve(loss_history, np.ones(1000)/1000, mode='valid')
         plt.yscale('log')
         plt.plot(rolling_loss)
         plt.title('Average Loss (100 episodes)')
@@ -208,5 +208,5 @@ def evaluate_agent(agent, env, episodes=1000):
 
 if __name__ == "__main__":
 
-    agent = DQNAgent(count_type="full")
-    train_agent(episodes=1000, update_target_every=10, print_every=100, agent=agent)
+    agent = DQNAgent(count_type="hi_lo")
+    train_agent(episodes=4, update_target_every=2, print_every=2, agent=agent)

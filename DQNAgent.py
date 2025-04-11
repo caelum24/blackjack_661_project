@@ -133,14 +133,28 @@ class DQNAgent:
 
         # Compute V(s_{t+1}) for all next states
         #TODO -> print out the outputs to see what they get out of it, why is our reward system diverging
+
+        q_options1 = self.target_net(next_states_1)
+        q_options2 = self.target_net(split_states)
+        print("STATES")
+        print(next_states_1, split_states)
+        print("Q_VALUES")
+        print(q_options1, q_options2)
+
         next_q_values1 = self.target_net(next_states_1).max(1)[0].detach()
         next_q_values2 = self.target_net(split_states).max(1)[0].detach()
-
+        print(next_q_values2*has_next2)
         # Compute the expected Q values
+        # THIS IS THE 2 STATE STUFF FOR SPLITTING
         combined_next_q_values = next_q_values1 + has_next2 * next_q_values2
-
-        # expected_q_values = rewards + (1 - dones) * self.gamma * next_q_values
+        print("COMBINED Qs", combined_next_q_values)
         expected_q_values = rewards + (1 - dones) * self.gamma * combined_next_q_values
+        print("DATA", rewards, dones, combined_next_q_values)
+
+        print("COMBINED EXPECTED", expected_q_values)
+        expected_q_values = rewards + (1 - dones) * self.gamma * next_q_values1
+        print("EXPECTED", expected_q_values)
+        
         # Compute Huber loss
         loss = F.smooth_l1_loss(q_values.squeeze(), expected_q_values)
 
