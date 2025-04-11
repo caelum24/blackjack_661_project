@@ -83,3 +83,4 @@ class QStateAgent:
         self.epsilon = max(self.epsilon - 0.000001, self.epsilon_min)
 
         return loss
+

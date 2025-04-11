@@ -111,13 +111,6 @@ def model(agent):
         # Create mapping for action names
         action_names = {0: "Hit", 1: "Stand", 2: "Double"}
 
-        # # Create a sample environment for checking states
-        # env = BlackjackEnv()
-
-        # Prepare card percentages for synthetic states
-        # For comparison purposes, we'll use a balanced deck (equal distribution)
-        balanced_card_percentages = np.ones(10) / 10  # 10% for each card type
-
         # Prepare the results
         print("\n\n===== COMPARING AGENT VS BASIC STRATEGY =====\n")
 
@@ -135,10 +128,9 @@ def model(agent):
         # Check each combination
         for player_total in range(8, 26):  # 8 to 25
             for dealer_upcard in range(2, 12):  # 2 to 11 (Ace)
-                # Create a synthetic state with card percentages
-                # [player_sum, dealer_up_card, usable_ace, can_double, normalized_bankroll, normalized_bet]
-                base_state = np.array([player_total, dealer_upcard, 0, 1, 1.0, 0.5])
-                state = np.concatenate([base_state, balanced_card_percentages])
+                # Create a synthetic state with simplified features
+                # [player_sum, dealer_up_card, usable_ace, can_double]
+                state = np.array([player_total, dealer_upcard, 0, 1])
 
                 # Get basic strategy action
                 if player_total <= 25 and player_total >= 8:
@@ -155,7 +147,7 @@ def model(agent):
 
                 state_tensor = torch.FloatTensor(state).unsqueeze(0).to(DEVICE)
                 with torch.no_grad():
-                    action_probs = agent.policy_net(state_tensor).cpu().data.numpy()[0]
+                    action_probs = agent.policy_net(state_tensor, training=False).cpu().data.numpy()[0]
 
                 # Mask invalid actions
                 masked_values = np.copy(action_probs)
@@ -199,10 +191,9 @@ def model(agent):
             for dealer_upcard in range(2, 12):  # 2 to 11 (Ace)
                 player_total = 11 + ace_with  # A=11 + second card
 
-                # Create a synthetic state
-                # [player_sum, dealer_up_card, usable_ace, can_double, normalized_bankroll, normalized_bet]
-                base_state = np.array([player_total, dealer_upcard, 1, 1, 1.0, 0.5])
-                state = np.concatenate([base_state, balanced_card_percentages])
+                # Create a synthetic state with simplified features
+                # [player_sum, dealer_up_card, usable_ace, can_double]
+                state = np.array([player_total, dealer_upcard, 1, 1])
 
                 # Get basic strategy action
                 row_idx = ace_with - 2  # A,2 starts at index 0
@@ -216,7 +207,7 @@ def model(agent):
 
                 state_tensor = torch.FloatTensor(state).unsqueeze(0).to(DEVICE)
                 with torch.no_grad():
-                    action_probs = agent.policy_net(state_tensor).cpu().data.numpy()[0]
+                    action_probs = agent.policy_net(state_tensor, training=False).cpu().data.numpy()[0]
 
                 # Mask invalid actions
                 masked_values = np.copy(action_probs)
@@ -263,10 +254,9 @@ def model(agent):
                     player_total = pair_card * 2
                     usable_ace = 0
 
-                # Create a synthetic state
-                # [player_sum, dealer_up_card, usable_ace, can_double, normalized_bankroll, normalized_bet]
-                base_state = np.array([player_total, dealer_upcard, usable_ace, 1, 1.0, 0.5])
-                state = np.concatenate([base_state, balanced_card_percentages])
+                # Create a synthetic state with simplified features
+                # [player_sum, dealer_up_card, usable_ace, can_double]
+                state = np.array([player_total, dealer_upcard, usable_ace, 1])
 
                 # Get basic strategy action
                 row_idx = pair_card - 2  # 2,2 starts at index 0
@@ -293,7 +283,7 @@ def model(agent):
 
                 state_tensor = torch.FloatTensor(state).unsqueeze(0).to(DEVICE)
                 with torch.no_grad():
-                    action_probs = agent.policy_net(state_tensor).cpu().data.numpy()[0]
+                    action_probs = agent.policy_net(state_tensor, training=False).cpu().data.numpy()[0]
 
                 # Mask invalid actions
                 masked_values = np.copy(action_probs)

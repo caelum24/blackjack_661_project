@@ -2,8 +2,6 @@ from deck_classes import Deck
 import numpy as np
 
 INITIAL_BANKROLL = 1000
-MAX_BET = 1 # TODO -> should we get rid of the betting thing for now?
-MIN_BET = 1 # TODO -> should we get rid of the betting thing for now?
 
 class BlackjackEnv:
 
@@ -13,6 +11,8 @@ class BlackjackEnv:
 
     def __init__(self, num_decks = 6, count_type: str = "full"):
         self.deck = Deck(num_decks=num_decks)
+        self.MIN_BET = 1
+        self.MAX_BET = 100
     
         if count_type not in ["full", "empty", "hi_lo", "zen", "uston_apc"]:
             print("count type must be one of", ["full", "empty", "hi_lo", "zen", "uston_apc"])
@@ -99,7 +99,8 @@ class BlackjackEnv:
         if self.done:
             return self.get_state(), 0, self.done
 
-        reward = 0
+        strategy_reward = 0  # Reward for game strategy (win/lose/draw)
+        bet_reward = 0      # Reward for betting (will be handled by separate network)
 
         # Execute action
         if action == 0:  # Hit
@@ -110,7 +111,7 @@ class BlackjackEnv:
 
             if player_value > 21:  # Bust
                 self.done = True
-                reward = -self.current_bet
+                strategy_reward = -1  # Strategy loss
             elif player_value == 21:  # Automatically stand on 21
                 return self.stand()
 
@@ -132,11 +133,11 @@ class BlackjackEnv:
 
             if player_value > 21:  # Bust
                 self.done = True
-                reward = -self.current_bet
+                strategy_reward = -1  # Strategy loss
             else:
                 return self.stand()
 
-        return self.get_state(), reward, self.done
+        return self.get_state(), strategy_reward, self.done
 
     def stand(self):
         # Dealer's turn
@@ -154,18 +155,15 @@ class BlackjackEnv:
         # Determine outcome
         self.done = True
         if dealer_value > 21:  # Dealer bust
-            reward = self.current_bet
-            self.bankroll += 2 * self.current_bet
+            strategy_reward = 1  # Strategy win
         elif player_value > dealer_value:  # Player wins
-            reward = self.current_bet
-            self.bankroll += 2 * self.current_bet
+            strategy_reward = 1  # Strategy win
         elif player_value < dealer_value:  # Dealer wins
-            reward = -self.current_bet
+            strategy_reward = -1  # Strategy loss
         else:  # Push
-            self.bankroll += self.current_bet
-            reward = 0
+            strategy_reward = 0  # Strategy draw
 
-        return self.get_state(), reward, self.done
+        return self.get_state(), strategy_reward, self.done
 
     def calculate_hand_value(self, hand):
         value = 0
@@ -260,7 +258,7 @@ class BlackjackEnv:
         usable_ace = 1 if any(card.value == 'A' for card in self.player_hand) and player_sum <= 21 else 0
         can_double = 1 if len(self.player_hand) == 2 and not self.doubled else 0
         normalized_bankroll = self.bankroll / INITIAL_BANKROLL
-        normalized_bet = self.current_bet / MAX_BET
+        normalized_bet = self.current_bet / self.MAX_BET
 
         # Calculate number of remaining cards
         total_remaining = len(self.deck.cards)
@@ -292,10 +290,18 @@ class BlackjackEnv:
         return full_state
 
     def place_bet(self, bet_size_factor):
-        # Convert the continuous bet size factor (0-1) to an actual bet size
-        bet = int(MIN_BET + bet_size_factor * (MAX_BET - MIN_BET))
-        bet = max(MIN_BET, min(bet, MAX_BET, self.bankroll))
-
-        self.current_bet = bet
-        self.bankroll -= bet
+        """
+        Place a bet based on the bet size factor (0 to 1)
+        Returns the new state and bet reward
+        """
+        bet_amount = int(bet_size_factor * (self.MAX_BET - self.MIN_BET) + self.MIN_BET)
+        bet_amount = max(self.MIN_BET, min(bet_amount, self.MAX_BET))
+        
+        if bet_amount > self.bankroll:
+            bet_amount = self.bankroll
+            
+        self.current_bet = bet_amount
+        self.bankroll -= bet_amount
+        
+        # Return the state and 0 reward (betting rewards will be handled by separate network)
         return self.get_state(), 0, self.done

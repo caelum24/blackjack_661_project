@@ -11,25 +11,49 @@ from replay_buffer import ReplayBuffer
 from hyperparameters import HyperParameters
 
 """
-NN for agent. Currently just 3 FC layers w/ RELUs. To use import Train Agent and call it with 
-agent = DQNAgent. 
+Dueling DQN architecture for the blackjack agent. This architecture separately estimates
+the state value and action advantages, which is particularly useful for card games.
 """
 
-class DQN(nn.Module):
+class DuelingDQN(nn.Module):
     def __init__(self, state_size, action_size):
-        super(DQN, self).__init__()
-        self.fc1 = nn.Linear(state_size, 64)
-        self.fc2 = nn.Linear(64, 64)
-        self.fc3 = nn.Linear(64, action_size)
+        super(DuelingDQN, self).__init__()
+        
+        # Shared feature layer
+        self.feature_layer = nn.Sequential(
+            nn.Linear(state_size, 64),
+            nn.ReLU(),
+            nn.Linear(64, 64),
+            nn.ReLU()
+        )
+        
+        # Value stream
+        self.value_stream = nn.Sequential(
+            nn.Linear(64, 32),
+            nn.ReLU(),
+            nn.Linear(32, 1)
+        )
+        
+        # Advantage stream
+        self.advantage_stream = nn.Sequential(
+            nn.Linear(64, 32),
+            nn.ReLU(),
+            nn.Linear(32, action_size)
+        )
+        
+    def forward(self, x, training=True):
+        # Simplified forward pass without batch norm handling
+        x = self.feature_layer(x)
+        
+        values = self.value_stream(x)
+        advantages = self.advantage_stream(x)
+        
+        # Combine value and advantage streams
+        q_values = values + (advantages - advantages.mean(dim=1, keepdim=True))
+        return q_values
 
-    def forward(self, x):
-        x = F.relu(self.fc1(x))
-        x = F.relu(self.fc2(x))
-        return self.fc3(x)
-    
 class DQNAgent:
     def __init__(self, state_size, action_size):
-
         self.DEVICE = HyperParameters.DEVICE
         self.state_size = state_size
         self.action_size = action_size
@@ -39,8 +63,8 @@ class DQNAgent:
         self.epsilon_min = HyperParameters.EPSILON_MIN
         self.epsilon_decay = HyperParameters.EPSILON_DECAY
 
-        self.policy_net = DQN(state_size, action_size).to(self.DEVICE)
-        self.target_net = DQN(state_size, action_size).to(self.DEVICE)
+        self.policy_net = DuelingDQN(state_size, action_size).to(self.DEVICE)
+        self.target_net = DuelingDQN(state_size, action_size).to(self.DEVICE)
         self.target_net.load_state_dict(self.policy_net.state_dict())
         self.target_net.eval()
 
@@ -62,7 +86,7 @@ class DQNAgent:
 
         state_tensor = torch.FloatTensor(state).unsqueeze(0).to(DEVICE)
         with torch.no_grad():
-            act_values = self.policy_net(state_tensor).cpu().data.numpy()
+            act_values = self.policy_net(state_tensor, training=False).cpu().data.numpy()
 
         # Filter out invalid actions by setting their values to a very low number
         masked_values = np.copy(act_values[0])
@@ -71,27 +95,6 @@ class DQNAgent:
                 masked_values[i] = -np.inf
 
         return np.argmax(masked_values)
-
-    def bet(self, state):
-        # Added Kelly Criterion to for the bet factor
-        win_prob = 0.3610
-        loss_prob = 0.5200
-        net_odds = 1.5
-
-        kelly_fraction = (net_odds * win_prob - loss_prob) / net_odds
-
-        kelly_fraction = min(1, max(kelly_fraction, 0))
-
-        # Using a separate neural network for betting would be better,
-        #if np.random.rand() <= self.epsilon:
-            #return np.random.uniform(0, 1)  # Random bet size factor between 0 and 1
-
-        # For exploration during training, add some noise to the bet
-        #noise = 0.1 * np.random.randn()
-        #bet_factor = state[5] + noise  # Use the previous bet as a starting point
-        #return max(0, min(1, bet_factor))  # Clip to [0, 1]
-        return kelly_fraction + 0.01 * np.random.randn()
-
 
     def learn(self):
         BATCH_SIZE = HyperParameters.BATCH_SIZE
@@ -109,10 +112,10 @@ class DQNAgent:
         dones = torch.FloatTensor(dones).to(DEVICE)
 
         # Compute Q(s_t, a) - the model computes Q(s_t), then we select the columns of actions taken
-        q_values = self.policy_net(states).gather(1, actions.unsqueeze(1))
+        q_values = self.policy_net(states, training=True).gather(1, actions.unsqueeze(1))
 
         # Compute V(s_{t+1}) for all next states
-        next_q_values = self.target_net(next_states).max(1)[0].detach()
+        next_q_values = self.target_net(next_states, training=True).max(1)[0].detach()
 
         # Compute the expected Q values
         expected_q_values = rewards + (1 - dones) * self.gamma * next_q_values
@@ -133,3 +136,4 @@ class DQNAgent:
             self.epsilon *= self.epsilon_decay
 
         return loss.item()
+    
