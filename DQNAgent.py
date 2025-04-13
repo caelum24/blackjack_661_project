@@ -6,11 +6,8 @@ import torch.optim as optim
 import torch.nn.functional as F
 from collections import deque
 import matplotlib.pyplot as plt
-# from environment import BlackjackEnv 
-from split_environment import BlackjackEnv
 from replay_buffer import ReplayBuffer
 from hyperparameters import HyperParameters
-from epsilon_decayer import EpsilonDecayer
 
 """
 Dueling DQN architecture for the blackjack agent. This architecture separately estimates
@@ -85,8 +82,8 @@ class DQNAgent:
         self.memory = ReplayBuffer(HyperParameters.MEMORY_SIZE)
         self.gamma = HyperParameters.GAMMA
         self.epsilon = HyperParameters.EPSILON_START
-        self.epsilon_min = HyperParameters.EPSILON_MIN
-        self.epsilon_decay = HyperParameters.EPSILON_DECAY
+        # self.epsilon_min = HyperParameters.EPSILON_MIN -> set these in a separate decaying class... epsilon is updated through update_epsilon
+        # self.epsilon_decay = HyperParameters.EPSILON_DECAY
 
         self.policy_net = DuelingDQN(state_size, action_size).to(self.DEVICE)
         self.target_net = DuelingDQN(state_size, action_size).to(self.DEVICE)
@@ -97,6 +94,10 @@ class DQNAgent:
 
     def update_target_network(self):
         self.target_net.load_state_dict(self.policy_net.state_dict())
+    
+    def update_epsilon(self, epsilon): 
+        # takes in the new epsilon from training loop to make updates properly with e-greedy policy
+        self.epsilon = epsilon
 
     def remember(self, state, action, reward, next_state, split_state, done):
         self.memory.push(state, action, reward, next_state, split_state, done)
@@ -169,9 +170,9 @@ class DQNAgent:
         # next_q_values = self.target_net(next_states_1, training=True).max(1)[0].detach()
         #TODO -> print out the outputs to see what they get out of it, why is our reward system diverging
 
-        q_options1 = self.target_net(next_states_1)
-        q_options2 = self.target_net(split_states)
-        # print("STATES")
+        # q_options1 = self.target_net(next_states_1)
+        # q_options2 = self.target_net(split_states)
+        # # print("STATES")
         # print(next_states_1, split_states)
         # print("Q_VALUES")
         # print(q_options1, q_options2)
@@ -200,12 +201,6 @@ class DQNAgent:
         for param in self.policy_net.parameters():
             param.grad.data.clamp_(-1, 1)
         self.optimizer.step()
-
-        # TODO -> add epsilon decay class here to benefit training
-        # Update epsilon for exploration
-        if self.epsilon > self.epsilon_min:
-            self.epsilon *= self.epsilon_decay
-            pass
 
         return loss.item()
     

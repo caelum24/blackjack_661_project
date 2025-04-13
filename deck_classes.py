@@ -14,7 +14,8 @@ class Card:
         self.suit = suit
         self.value = value
 
-    def get_numeric_value(self):
+    @property
+    def numeric_value(self):
         if self.value in ['J', 'Q', 'K']:
             return 10
         elif self.value == 'A':

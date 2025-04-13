@@ -151,7 +151,7 @@ class BlackjackEnv:
 
         # if bust, we note the reward and move on to the next hand
         if hand_value > 21:
-            reward = -1 # NOTE -> this reward doesn't really do anything
+            reward = -1 # TODO -> this reward doesn't really do anything
             # self.player_reward_magnitudes[self.current_hand_index] = reward  # note bust for the ith hand
             return self._next_hand(reward)
         
@@ -159,7 +159,8 @@ class BlackjackEnv:
         return self._get_state(), 0, 0 
 
     def _stand(self):
-        return self._next_hand(0) 
+        reward = 0
+        return self._next_hand(reward) 
     
     def _double(self):
         player_hand = self.player_hands[self.current_hand_index]
@@ -174,9 +175,10 @@ class BlackjackEnv:
 
         # if bust, we note the reward and move on to the next hand
         if hand_value > 21:
-            reward = -2 # NOTE -> this line not needed
+            reward = -2
             return self._next_hand(reward)
-        reward = 0
+
+        reward=0
         return self._next_hand(reward)
         
     def _split(self):
@@ -200,8 +202,9 @@ class BlackjackEnv:
         self.player_hands.insert(self.current_hand_index + 1, new_hand2)
         self.player_reward_magnitudes.insert(self.current_hand_index + 1, self.player_reward_magnitudes[self.current_hand_index])
 
+        reward = 0
         # thankfully, splitting doesn't result in blackjack, so we will never be done upon a split
-        return self._get_state(), 0, 0
+        return self._get_state(), reward, 0
 
     def _deal_initial_hand(self):
         # Deal initial cards - track each card as it's dealt
@@ -263,7 +266,7 @@ class BlackjackEnv:
         aces = 0
 
         for card in hand:
-            card_value = card.get_numeric_value()
+            card_value = card.numeric_value
             if card_value == 11:
                 aces += 1
             value += card_value
@@ -277,7 +280,7 @@ class BlackjackEnv:
 
     def _can_split(self):
         player_hand = self.player_hands[self.current_hand_index]
-        return 1 if len(player_hand) == 2 and player_hand[0].value == player_hand[1].value and len(self.player_hands)==1 else 0 # ensure you can only split once
+        return 1 if len(player_hand) == 2 and player_hand[0].numeric_value == player_hand[1].numeric_value and len(self.player_hands)==1 else 0 # ensure you can only split once
         # can_split = 1 if len(player_hand == 2) and player_hand[0].value == player_hand[1].value else 0
     
     def _usable_ace(self, hand):
@@ -285,7 +288,7 @@ class BlackjackEnv:
         aces = 0
 
         for card in hand:
-            card_value = card.get_numeric_value()
+            card_value = card.numeric_value
             if card_value == 11:
                 aces += 1
             value += card_value
@@ -304,7 +307,7 @@ class BlackjackEnv:
         player_hand = self.player_hands[self.current_hand_index]
 
         player_sum = self._calculate_hand_value(player_hand)
-        dealer_up_card = self.dealer_hand[0].get_numeric_value()
+        dealer_up_card = self.dealer_hand[0].numeric_value
         usable_ace = self._usable_ace(player_hand)
         can_double = self._can_double()
         can_split = self._can_split()

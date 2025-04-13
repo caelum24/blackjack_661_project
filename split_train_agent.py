@@ -12,6 +12,9 @@ from SplitTracker import SplitTracker
 from DQNAgent import DQNAgent
 from hyperparameters import HyperParameters
 from datetime import datetime
+from exponential_decay import ExponentialDecayer
+from RewardBonus import RewardBonus
+
 """
 Train agent and evaluate agent code. Import and use directly to print information and
 get the accuracy returned. Hyperparameters and gathered from the hyperparameters file. 
@@ -20,13 +23,14 @@ Train agent is set up to run with the DQNAgent for now, might need to make modif
 with other models. 
 """
 
-# TODO -> want to add input reward system for the trainer that is a hyperparameter
-
-# TODO -> this function is the training loop for a model to play blackjack with
 def train_agent(agent, episodes=10000, update_target_every=100, print_every=100):
     
     # environment needs to embody the same counts as the agent
     env = BlackjackEnv(count_type=agent.count_type)
+    epsilon_manager = ExponentialDecayer(episodes, decay_strength=HyperParameters.EPSILON_DECAY_STRENGTH, e_max=HyperParameters.EPSILON_START, e_min=HyperParameters.EPSILON_MIN)
+
+    ### Bonus Reward Stuff ###
+    bonus_manager = RewardBonus(episodes, decay_strength=HyperParameters.EPSILON_DECAY_STRENGTH+4, initial_bonuses=HyperParameters.BONUS_REWARDS)
 
     # Statistics
     bankroll_history = []
@@ -35,31 +39,28 @@ def train_agent(agent, episodes=10000, update_target_every=100, print_every=100)
 
     for e in range(episodes):
 
-        # Place a bet
-        # TODO _> this part should go in a separate model training loop
-        # counts = env.get_count() # returns a np array
-        # counts = torch.FloatTensor(counts).to(agent.DEVICE)
-        # bet_size_factor = betting_agent.bet(counts)
-        # state, _, _ = env.place_bet(bet_size_factor)
-        # player_bet = 1
         # Reset environment
-        # TODO -> make it so reset takes in a bet for betting training loop in a new file
         state, reward, done = env.reset()
+
+        # if blackjack, can't do anything, so just skip to next episode
+        if state[0] == 21:
+            continue
 
         cumulative_reward = 0
         episode_loss = 0
         steps = 0
+        terminal_hand_states = []
         split_tracker:SplitTracker = None
         # done in [0,1,2] -> 0 = not done, 1 = hand done (for splitting), 2 = completely done
         done = 0
 
         while done != 2:
-            # TODO -> need to add some stuff about splitting
             # Take action
             action = agent.act(state)
             next_state, reward, done = env.step(action)
 
-            # TODO -> add in the bonus rewards here
+            # the bonus rewards added here
+            reward += bonus_manager.get_bonus(action)
 
             if action == 3:
                 # if splitting, use split tracker to monitor the state of those hands
@@ -70,13 +71,20 @@ def train_agent(agent, episodes=10000, update_target_every=100, print_every=100)
                 # add to the split tree the lower state that results
                 split_tracker.split(next_state)
             
-            else:
-                # if not splitting, remember the experience for training
-                agent.remember(state, action, reward, next_state, np.zeros_like(next_state), (done==1 or done==2))
+            elif done != 0:
+                # if done occurred in some way or another, we need to wait until the end of the game to determine what the reward was
+                # store these hands in an array and come back to them later
+                terminal_hand_states.append((state, action, reward, next_state, np.zeros_like(next_state), True))
 
-            if done == 1:
-                # if just a hand is done... only happens after a split
-                split_tracker.switch_hand(next_state)
+                if done==1:
+                    # if just a hand is done... only happens after a split
+                    split_tracker.switch_hand(next_state)
+
+            else:
+                # if not done, we can immediately remember the experience
+                agent.remember(state, action, reward, next_state, np.zeros_like(next_state), done=False)
+
+            
             
             # Learn from experiences
             if len(agent.memory) >= HyperParameters.BATCH_SIZE:
@@ -91,16 +99,24 @@ def train_agent(agent, episodes=10000, update_target_every=100, print_every=100)
         
         # add up the rewards of playing the game
         #NOTE -> the cumulative reward is going to be skewed based on the bonus system we implement
-        cumulative_reward = sum(env.deliver_rewards())
-        
+        hand_rewards = env.deliver_rewards()
+
+        # currently, cumulative reward only cares about the game, not the bonuses
+        cumulative_reward = sum(hand_rewards)
+
+        # learn from the terminal states:
+        for i, (state, action, reward, next_state, split_state, done) in enumerate(terminal_hand_states):
+            # remember but also add the reward from the end of the game to actually get ahold of the states
+            agent.remember(state, action, reward+hand_rewards[i], next_state, split_state, done) # done = True
+
         # if agent split during the game, store the states that resulted for split training
         if split_tracker is not None:
             split_next_hands = split_tracker.get_split_next_hands()
             for split_state, (ret1_state, ret2_state) in split_next_hands:
-                #TODO -> add in the split bonus rewards here
-                reward = 0
                 action = 3 # 3 for splitting
+                reward = bonus_manager.get_bonus(action)
                 agent.remember(split_state, action, reward, ret1_state, ret2_state, done=False)
+                # print("SPLITTING", split_state, action, reward, ret1_state, ret2_state)
 
 
         # Update target network
@@ -114,6 +130,13 @@ def train_agent(agent, episodes=10000, update_target_every=100, print_every=100)
             loss_history.append(episode_loss / steps)
         else:
             loss_history.append(0)
+
+        # update epsilon
+        epsilon_manager.decay_epsilon()
+        agent.update_epsilon(epsilon_manager.get_epsilon())
+    
+        # decay the bonuses
+        bonus_manager.decay_bonuses()
 
         # Print progress
         if e % print_every == 0:
@@ -130,7 +153,6 @@ def evaluate_agent(agent, env:BlackjackEnv, episodes=1000):
     # wins = 0
     # losses = 0
     # pushes = 0
-    #TODO -> need to update this to work with the new splitting agent and environment
     for e in range(episodes):
         done = 0
         state, _, done = env.reset()
@@ -142,7 +164,7 @@ def evaluate_agent(agent, env:BlackjackEnv, episodes=1000):
         while done != 2:
 
             action = agent.act(state)
-            next_state, reward, done = env.step(action)
+            next_state, _, done = env.step(action)
 
             state = next_state
 
@@ -218,4 +240,4 @@ def save_training_graphs(bankroll_history, reward_history, loss_history, timesta
 if __name__ == "__main__":
 
     agent = DQNAgent(count_type="hi_lo")
-    train_agent(episodes=4, update_target_every=2, print_every=2, agent=agent)
+    train_agent(episodes=100, update_target_every=2, print_every=20, agent=agent)

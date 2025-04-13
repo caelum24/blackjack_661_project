@@ -45,7 +45,7 @@ def main():
     else:
         # Train new model
         print(f"Training new model for {args.episodes} episodes...")
-        agent, env = train_agent(agent, episodes=args.episodes)
+        agent, env = train_agent(agent, episodes=args.episodes, print_every=100)
 
     # Evaluate and visualize the model
     model(agent)

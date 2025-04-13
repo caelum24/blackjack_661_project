@@ -145,6 +145,8 @@ def model(agent):
                 valid_actions = [0, 1]  # Hit and stand are always valid
                 if state[3] == 1:  # Can double
                     valid_actions.append(2)
+                if len(state) > 4 and state[4] == 1:
+                    valid_actions.append(3)
 
                 state_tensor = torch.FloatTensor(state).unsqueeze(0).to(DEVICE)
                 with torch.no_grad():
@@ -205,6 +207,8 @@ def model(agent):
                 valid_actions = [0, 1]  # Hit and stand are always valid
                 if state[3] == 1:  # Can double
                     valid_actions.append(2)
+                if len(state) > 4 and state[4] == 1:
+                    valid_actions.append(3)
 
                 state_tensor = torch.FloatTensor(state).unsqueeze(0).to(DEVICE)
                 with torch.no_grad():
@@ -281,6 +285,8 @@ def model(agent):
                 valid_actions = [0, 1]  # Hit and stand are always valid
                 if state[3] == 1:  # Can double
                     valid_actions.append(2)
+                if len(state) > 4 and state[4] == 1:
+                    valid_actions.append(3)
 
                 state_tensor = torch.FloatTensor(state).unsqueeze(0).to(DEVICE)
                 with torch.no_grad():
@@ -357,6 +363,14 @@ def model(agent):
         
         # Process each test state
         for i, (state, name) in enumerate(zip(test_states, state_names)):
+
+            # Determine valid actions to ensure model doesn't do something illegal
+            valid_actions = [0, 1]  # Hit and stand are always valid
+            if state[3] == 1:  # Can double
+                valid_actions.append(2)
+            if len(state) > 4 and state[4] == 1:
+                valid_actions.append(3)
+
             # Convert state to tensor
             state_tensor = torch.FloatTensor(state).unsqueeze(0).to(DEVICE)
             
@@ -364,6 +378,15 @@ def model(agent):
             with torch.no_grad():
                 action_probs = agent.policy_net(state_tensor, training=False).cpu().data.numpy()[0]
             
+            # NOTE -> added this to filter model to give no value to invalid actions
+            # Filter out invalid actions by setting their values to a very low number
+            masked_values = np.copy(action_probs)
+            for k in range(len(action_names)):
+                if k not in valid_actions:
+                    masked_values[k] = -np.inf
+
+            action_probs = masked_values
+
             # Apply softmax to get probabilities
             action_probs = np.exp(action_probs) / np.sum(np.exp(action_probs))
             
