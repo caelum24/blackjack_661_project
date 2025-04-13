@@ -103,7 +103,7 @@ def evaluate_agent(agent, env, episodes=1000):
                 valid_actions.append(2)
 
             # Take action (no random exploration during evaluation)
-            action = agent.act(state, valid_actions=valid_actions, e_greedy = False)
+            action = agent.act(state, valid_actions=valid_actions)
 
             next_state, reward, done = env.step(action)
 
