@@ -3,10 +3,12 @@ Master file for the blackjack agent.
 '''
 import argparse
 import torch
-from train_agent import train_agent
+# from train_agent import train_agent
+from split_train_agent import train_agent
 from modeling import model
 from DQNAgent import DQNAgent
-from environment import BlackjackEnv
+# from environment import BlackjackEnv
+from split_environment import BlackjackEnv
 
 def load_model(model_path):
     """Load a trained model from file"""
@@ -14,8 +16,9 @@ def load_model(model_path):
     state_size = 4  # player_sum, dealer_up_card, usable_ace, can_double
     action_size = 3  # hit, stand, double
     
+    #TODO -> update count type to be an input to function
     # Create agent with same architecture
-    agent = DQNAgent(state_size=state_size, action_size=action_size)
+    agent = DQNAgent(count_type="empty")
     
     # Load saved state
     checkpoint = torch.load(model_path)
@@ -34,6 +37,7 @@ def main():
     parser.add_argument('--load', type=str, help='Path to load a trained model')
     parser.add_argument('--episodes', type=int, default=10000, help='Number of episodes to train (default: 10000)')
     args = parser.parse_args()
+    agent = DQNAgent("empty")
 
     if args.load:
         # Load existing model
@@ -41,7 +45,7 @@ def main():
     else:
         # Train new model
         print(f"Training new model for {args.episodes} episodes...")
-        agent, env = train_agent(episodes=args.episodes)
+        agent, env = train_agent(agent, episodes=args.episodes, print_every=100)
 
     # Evaluate and visualize the model
     model(agent)

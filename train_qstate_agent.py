@@ -29,8 +29,6 @@ def train_q_agent(agent, env, episodes=100000, update_target_every=100, print_ev
             
             action = agent.act(state, valid_actions)
             next_state, reward, done = env.step(action)
-            if str(reward) == "wtf":
-                print("here")
 
             loss = agent.learn(state, action, reward, next_state, done)
 
@@ -134,6 +132,6 @@ if __name__ == "__main__":
     agent = QStateAgent(state_size = 4, action_size = 3)
     env = BlackjackEnv(num_decks = 6, count_type = "empty")
 
-    train_q_agent(agent, env, episodes=1000000, update_target_every=100, print_every=10000)
+    train_q_agent(agent, env, episodes=100000, update_target_every=100, print_every=10000)
     evaluate_agent(agent, env, episodes=10000)
     model(agent)

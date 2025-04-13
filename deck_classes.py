@@ -14,7 +14,8 @@ class Card:
         self.suit = suit
         self.value = value
 
-    def get_numeric_value(self):
+    @property
+    def numeric_value(self):
         if self.value in ['J', 'Q', 'K']:
             return 10
         elif self.value == 'A':
@@ -29,6 +30,7 @@ class Deck:
     def __init__(self, num_decks=DECK_COUNT):
         self.cards = []
         self.num_decks = num_decks
+        self.total_cards = self.num_decks * 52
         self.create_deck()
         self.shuffle()
 
@@ -44,7 +46,11 @@ class Deck:
     def shuffle(self):
         random.shuffle(self.cards)
 
-    def deal(self):
+    def get_decks_remaining(self) -> float:
+        # return what ratio of decks are still remaining... useful for getting the true count during a game
+        return len(self.cards)/self.total_cards*self.num_decks
+
+    def deal(self) -> Card:
         if len(self.cards) <= self.num_decks * 52 * 0.25:  # Reshuffle when 75% of cards are used
             # print("Reshuffling the deck...")
             self.cards = []

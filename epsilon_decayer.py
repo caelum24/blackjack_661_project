@@ -1,10 +1,11 @@
-from numpy import exp, random
+from numpy import exp, random, log, e
 from collections import deque
 from matplotlib import pyplot as plt
 
+
 class EpsilonDecayer():
 
-    def __init__(self, decay_type = "lin", e_max = 1, e_min = 0, e_decay = 0.001, reward_target = 0, reward_increment = 1, reward_threshold = 0, alpha = 0.005, reward_ema_init = -1):
+    def __init__(self, decay_type = "linear", e_max = 1, e_min = 0, e_decay = 0.001, reward_target = 0, reward_increment = 1, reward_threshold = 0, alpha = 0.005, reward_ema_init = -1):
 
         # assert which decay type is being used
         self.decay_type = decay_type
@@ -65,22 +66,27 @@ class EpsilonDecayer():
             self.reward_threshold += self.reward_increment
 
 if __name__ == "__main__":
-    dec = EpsilonDecayer(decay_type="rbed", e_decay=0.001, reward_threshold= -1, reward_target = 0, reward_increment=0.001, alpha = 0.001)
+    # dec = EpsilonDecayer(decay_type="rbed", e_decay=0.001, reward_threshold= -1, reward_target = 0, reward_increment=0.001, alpha = 0.001)
+    num_steps = 20000
+    strength = 5
+    e_decay = strength/num_steps
+    dec = EpsilonDecayer(decay_type="exponential", e_max=1, e_min=0.5, e_decay=e_decay)
     # print(dec.get_epsilon())
     # dec.decay_epsilon()
     # print(dec.get_epsilon())
     i = 0
     epsilons = []
-    while dec.reward_threshold < dec.reward_target:
-    # for i in range(10000):
-        reward = random.randint(-1, 2)
-        dec.update_reward_ema(reward)
+    # while dec.reward_threshold < dec.reward_target:
+    for i in range(num_steps):
+        # reward = random.randint(-1, 2)
+        # dec.update_reward_ema(reward)
         dec.decay_epsilon()
         i += 1
         # if i % 1000  == 0:
-        print(dec.get_epsilon(), dec.reward_ema, dec.reward_threshold)
+        # print(dec.get_epsilon(), dec.reward_ema, dec.reward_threshold)
         epsilons.append(dec.get_epsilon())
 
+    print(epsilons[-1])
     plt.plot(range(len(epsilons)), epsilons)
     plt.show()
     # print(i)
