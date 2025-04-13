@@ -305,3 +305,11 @@ class BlackjackEnv:
         
         # Return the state and 0 reward (betting rewards will be handled by separate network)
         return self.get_state(), 0, self.done
+
+    def place_bet_raw(self, raw_bet_amount):
+        bet_amount = min(max(raw_bet_amount, self.MIN_BET), self.MAX_BET)
+        if bet_amount > self.bankroll:
+            bet_amount = self.bankroll
+        self.current_bet = bet_amount
+        self.bankroll -= bet_amount
+        return self.get_state(), 0, self.done
