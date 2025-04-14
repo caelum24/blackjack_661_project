@@ -133,6 +133,15 @@ def model(agent):
                 # [player_sum, dealer_up_card, usable_ace, can_double, can_split]
                 state = np.array([player_total, dealer_upcard, 0, 1, 0])
 
+                # Add card counting information based on agent's count_type
+                if agent.count_type == "full":
+                    # For full count, add card percentages for each card value
+                    card_percentages = np.ones(10) * 0.1  # Equal distribution for comparison
+                    state = np.concatenate([state, card_percentages])
+                elif agent.count_type != "empty":
+                    # For system counts (hi_lo, zen, uston_apc, ten_count), add normalized count
+                    state = np.concatenate([state, [0.0]])  # Neutral count for comparison
+
                 # Get basic strategy action
                 if player_total <= 25 and player_total >= 8:
                     row_idx = min(player_total - 8, 17)  # Clip at 17+ (index 9)
@@ -198,6 +207,15 @@ def model(agent):
                 # [player_sum, dealer_up_card, usable_ace, can_double, can_split]
                 state = np.array([player_total, dealer_upcard, 0, 1, 0])
 
+                # Add card counting information based on agent's count_type
+                if agent.count_type == "full":
+                    # For full count, add card percentages for each card value
+                    card_percentages = np.ones(10) * 0.1  # Equal distribution for comparison
+                    state = np.concatenate([state, card_percentages])
+                elif agent.count_type != "empty":
+                    # For system counts (hi_lo, zen, uston_apc, ten_count), add normalized count
+                    state = np.concatenate([state, [0.0]])  # Neutral count for comparison
+
                 # Get basic strategy action
                 row_idx = ace_with - 2  # A,2 starts at index 0
                 col_idx = min(dealer_upcard - 2, 9)  # Convert dealer card to index
@@ -262,6 +280,15 @@ def model(agent):
                 # Create a synthetic state with simplified features
                 # [player_sum, dealer_up_card, usable_ace, can_double, can_split]
                 state = np.array([player_total, dealer_upcard, 0, 1, 0])
+
+                # Add card counting information based on agent's count_type
+                if agent.count_type == "full":
+                    # For full count, add card percentages for each card value
+                    card_percentages = np.ones(10) * 0.1  # Equal distribution for comparison
+                    state = np.concatenate([state, card_percentages])
+                elif agent.count_type != "empty":
+                    # For system counts (hi_lo, zen, uston_apc, ten_count), add normalized count
+                    state = np.concatenate([state, [0.0]])  # Neutral count for comparison
 
                 # Get basic strategy action
                 row_idx = pair_card - 2  # 2,2 starts at index 0
@@ -349,6 +376,16 @@ def model(agent):
             # Player 9,2 vs Dealer 3
             np.array([11, 3, 0, 1, 0])    # 9 + 2 = 11
         ]
+        
+        # Add card counting information based on agent's count_type
+        for i in range(len(test_states)):
+            if agent.count_type == "full":
+                # For full count, add card percentages for each card value
+                card_percentages = np.ones(10) * 0.1  # Equal distribution for comparison
+                test_states[i] = np.concatenate([test_states[i], card_percentages])
+            elif agent.count_type != "empty":
+                # For system counts (hi_lo, zen, uston_apc, ten_count), add normalized count
+                test_states[i] = np.concatenate([test_states[i], [0.0]])  # Neutral count for comparison
         
         state_names = [
             "Player 8,8 vs Dealer 10",
