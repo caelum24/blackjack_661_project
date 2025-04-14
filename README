@@ -1,1 +1,11 @@
 This project is based on using reinforcement learning to train a blackjack agent that can learn to play blackjack, comparing the performance of q-learning with a state lookup diagram and Deep Q-learning with a broader state space
+
+
+# Train a new model with Hi-Lo counting
+python main.py --count_type hi_lo --episodes 10000
+
+# Train a new model with Zen counting
+python main.py --count_type zen --episodes 10000
+
+# Load an existing model with Uston APC counting
+python main.py --load model.pt --count_type uston_apc
