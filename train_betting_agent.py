@@ -7,14 +7,11 @@ from BettingAgent import BettingRLAgent
 from replay_buffer import ReplayBuffer
 from environment import BlackjackEnv
 
-def load_and_run_model(model_path="dueling_dqn.pth", num_episodes=1000):
+def load_and_run_model(agent, env, num_episodes=1000):
     """
     Loads a saved DQN model, then runs multiple blackjack episodes.
     Logs each episode's relevant info: card counts, final outcome, etc.
     """
-
-    agent, env = load_model(model_path)
-
 
     all_results = []
 
@@ -36,7 +33,7 @@ def load_and_run_model(model_path="dueling_dqn.pth", num_episodes=1000):
                 valid_actions.append(2)
 
             # Agent picks action (no random exploration)
-            action = agent.act(state, valid_actions=valid_actions)
+            action = agent.act(state)
 
             # Environment executes action
             next_state, reward, done = env.step(action)
@@ -94,7 +91,7 @@ def train_betting_agent_from_run_data(run_data, possible_bets, state_dim=2, num_
 
         for i, bet in enumerate(possible_bets):
             reward = data["final_reward"] * bet
-            agent.store_transition(state, i, reward, next_state, done)
+            agent.store_transition(state, i, reward, next_state, np.zeros_like(next_state), done)
 
     losses = []
     for step in range(num_training_steps):
@@ -128,20 +125,15 @@ def evaluate_agent(betting_agent, playing_agent, env, episodes=1000):
         episode_reward = 0
         done = False
 
-        while not done:
-            # Determine valid actions
-            valid_actions = [0, 1]  # Hit and stand are always valid
-            if state[3] == 1:  # Can double
-                valid_actions.append(2)
+        while done != 2:
 
-            # Take action (no random exploration during evaluation)
-            action = playing_agent.act(state, valid_actions=valid_actions)
-
+            action = playing_agent.act(state)
             next_state, reward, done = env.step(action)
 
             state = next_state
-            episode_reward += reward
 
+        hand_rewards = env.deliver_rewards()
+        episode_reward = sum(hand_rewards)
         total_reward += episode_reward *bet_amount
 
         if episode_reward > 0:
