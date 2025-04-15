@@ -5,7 +5,7 @@ class HyperParameters:
     MIN_BET = 1
     MAX_BET = 100
     INITIAL_BANKROLL = 1000
-    GAMMA = 0.99  # Discount factor
+    GAMMA = 0.9  # Discount factor
     MEMORY_SIZE = 1000  # Reduced replay buffer size for faster learning
     BATCH_SIZE = 32  
     EPSILON_START = 1.0
