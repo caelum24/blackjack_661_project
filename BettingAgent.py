@@ -77,14 +77,14 @@ class BettingRLAgent:
             self.epsilon -= self.epsilon_decay
             self.epsilon = max(self.epsilon, self.epsilon_end)
 
-    def store_transition(self, state, action_idx, reward, next_state, done):
-        self.memory.push(state, action_idx, reward, next_state, done)
+    def store_transition(self, state, action_idx, reward, next_state, split_state, done):
+        self.memory.push(state, action_idx, reward, next_state, split_state, done)
 
     def update(self):
         if len(self.memory) < self.batch_size:
             return None
 
-        states, actions, rewards, next_states, dones = self.memory.sample(self.batch_size)
+        states, actions, rewards, next_states, split_states, dones = self.memory.sample(self.batch_size)
         states = torch.tensor(states, dtype=torch.float32).to(self.device)
         actions = torch.tensor(actions, dtype=torch.long).to(self.device)
         rewards = torch.tensor(rewards, dtype=torch.float32).to(self.device)
