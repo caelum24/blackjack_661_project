@@ -2,7 +2,6 @@ from deck_classes import Deck
 import numpy as np
 from hyperparameters import HyperParameters
 
-#TODO -> blackjack reward currently 1.5... need to hyperparameterize it for easier use
 #TODO -> make a hyperparameter for how low deck needs to get before shuffling on reset
 #TODO -> make self.player_bet an input to the reset function so we can simulate our playing agent with our betting agent
 #TODO may want to change the rewrd thing from _next_hand to None or remove it, as you only change hands when done, and 
