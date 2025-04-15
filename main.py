@@ -10,15 +10,14 @@ from DQNAgent import DQNAgent
 # from environment import BlackjackEnv
 from split_environment import BlackjackEnv
 
-def load_model(model_path):
+def load_model(model_path, count_type="empty"):
     """Load a trained model from file"""
-    env = BlackjackEnv(count_type="empty")
+    env = BlackjackEnv(count_type="count_type")
     state_size = 4  # player_sum, dealer_up_card, usable_ace, can_double
     action_size = 3  # hit, stand, double
     
-    #TODO -> update count type to be an input to function
     # Create agent with same architecture
-    agent = DQNAgent(count_type="empty")
+    agent = DQNAgent(count_type="count_type")
     
     # Load saved state
     checkpoint = torch.load(model_path)
@@ -36,15 +35,17 @@ def main():
     parser = argparse.ArgumentParser(description='Blackjack DQN Agent')
     parser.add_argument('--load', type=str, help='Path to load a trained model')
     parser.add_argument('--episodes', type=int, default=10000, help='Number of episodes to train (default: 10000)')
+    parser.add_argument('--count_type', type=str, default='empty', choices=['empty', 'full', 'hi_lo', 'zen', 'uston_apc', 'ten_count'],
+                      help='Card counting system to use (default: empty)')
     args = parser.parse_args()
-    agent = DQNAgent("empty")
 
     if args.load:
         # Load existing model
-        agent, env = load_model(args.load)
+        agent, env = load_model(args.load, count_type=args.count_type)
     else:
         # Train new model
-        print(f"Training new model for {args.episodes} episodes...")
+        print(f"Training new model for {args.episodes} episodes with {args.count_type} counting system...")
+        agent = DQNAgent(args.count_type)
         agent, env = train_agent(agent, episodes=args.episodes, print_every=100)
 
     # Evaluate and visualize the model
