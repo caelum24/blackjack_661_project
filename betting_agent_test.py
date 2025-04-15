@@ -4,22 +4,29 @@ from train_betting_agent import evaluate_agent
 import torch
 from main import load_model
 import argparse
-# from train_agent import train_agent
 from split_train_agent import train_agent
 from modeling import model
 from DQNAgent import DQNAgent
-# from environment import BlackjackEnv
 from split_environment import BlackjackEnv
+from Supervised_betting import collect_dictionary
+from BettingModel import BettingNN
+from BettingModel import train_betting_nn
+import pickle
 
-agent = DQNAgent("empty")
+agent = DQNAgent("full")
 print(f"Training new model for {1000} episodes...")
-playing_agent, env = train_agent(agent, episodes=10000, print_every=100)
+playing_agent, env = train_agent(agent, episodes=1000, print_every=100)
 
+dictionary = collect_dictionary(playing_agent, env, 1000)
+with open("count_reward_dict.pkl", "wb") as f:
+    pickle.dump(dictionary, f)
 
-run_data = load_and_run_model(playing_agent, env, num_episodes=5000)
+model = train_betting_nn(dictionary, input_dim=3, epochs=1000)
 
-possible_bets = [1, 5, 10, 25, 50, 100]
-betting_agent, loss_history = train_betting_agent_from_run_data(run_data, possible_bets, state_dim=2, num_training_steps=100000)
+run_data = load_and_run_model(playing_agent, env, num_episodes=50000)
+
+possible_bets = [1, 2, 3, 4, 5, 10, 25, 50, 100]
+betting_agent, loss_history = train_betting_agent_from_run_data(run_data, possible_bets, state_dim=2, num_training_steps=10000)
 
 evaluate_agent(betting_agent, playing_agent, env, episodes=1000)
 
