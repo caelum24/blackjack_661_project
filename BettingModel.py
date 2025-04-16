@@ -20,7 +20,7 @@ class BettingNN(nn.Module):
 
 def train_betting_nn(dictionary, input_dim, epochs):
     dataset = CountRewardDataset(dictionary)
-    dataloader = DataLoader(dataset, batch_size=3, shuffle=True)
+    dataloader = DataLoader(dataset, batch_size=128, shuffle=True)
 
     model = BettingNN(input_dim)
     criterion = nn.MSELoss()
