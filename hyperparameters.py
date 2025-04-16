@@ -17,4 +17,4 @@ class HyperParameters:
     TARGET_UPDATE = 100  # How often to update the target network
 
     # hit, stand, double, split bonus rewards that decay over time
-    BONUS_REWARDS = [0.0, 0.0, 1.0, 0.0]
+    BONUS_REWARDS = [0.0, 0.0, 0.0, 0.0]
