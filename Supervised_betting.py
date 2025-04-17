@@ -7,18 +7,26 @@ from BettingAgent import BettingRLAgent
 from replay_buffer import ReplayBuffer
 from environment import BlackjackEnv
 
-def collect_dictionary(agent, env, num_episodes):
+def collect_dictionary(agent, env, count_type, num_episodes):
 
     count_reward_dict = {}
     for e in range(num_episodes):
         done = 0
         state, _, done = env.reset()
 
-        start_hi_lo = env.hi_lo_count
-        start_zen = env.zen_count
-        start_uston = env.uston_apc_count
+        if count_type == "hi_lo":
+            count_state = [env.hi_lo_count]
+        elif count_type == "zen":
+            count_state = [env.zen_count]
+        elif count_type == "uston_apc":
+            count_state = [env.uston_apc_count]
+        elif count_type == "ten_count":
+            count_state = [env.ten_count]
+        elif count_type == "comb_counts":
+            count_state = [env.hi_lo_count, env.zen_count, env.uston_apc_count, env.ten_count]
+        elif count_type == "full":
+            count_state = env._get_full_count_state()
 
-        count_state = [start_hi_lo, start_zen, start_uston]
         count_state = tuple(np.round(count_state, 4))
 
         while done != 2:
@@ -46,7 +54,8 @@ def collect_dictionary(agent, env, num_episodes):
     return count_reward_dict
 
 
-def evaluate_nn_betting_agent(betting_model, playing_agent, env, episodes=1000, max_bet=100, min_bet=1):
+
+def evaluate_nn_betting_agent(betting_model, playing_agent, env, count_type, episodes=1000, max_bet=100, min_bet=1):
     betting_model.eval()
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     betting_model.to(device)
@@ -59,16 +68,25 @@ def evaluate_nn_betting_agent(betting_model, playing_agent, env, episodes=1000, 
     for e in range(episodes):
         state, _, _ = env.reset()
 
-        # Get betting input from environment
-        betting_state = np.array([
-            env.hi_lo_count,
-            env.zen_count,
-            env.uston_apc_count
-        ], dtype=np.float32)
+        if count_type == "hi_lo":
+            betting_state = [env.hi_lo_count]
+        elif count_type == "zen":
+            betting_state = [env.zen_count]
+        elif count_type == "uston_apc":
+            betting_state = [env.uston_apc_count]
+        elif count_type == "ten_count":
+            betting_state = [env.ten_count_count]
+        elif count_type == "comb_counts":
+            betting_state = [env.hi_lo_count, env.zen_count, env.uston_apc_count, env.ten_count_count]
+        elif count_type == "full":
+            betting_state = env._get_full_count_state()
+        else:
+            raise ValueError(f"Invalid count_type: {count_type}")
 
-        # Convert to tensor and get win probability
+        betting_state = tuple(np.round(betting_state, 4))
+
         with torch.no_grad():
-            input_tensor = torch.tensor(betting_state).unsqueeze(0).to(device)  # shape [1, 3]
+            input_tensor = torch.tensor(betting_state, dtype=torch.float32).unsqueeze(0).to(device)  # shape [1, 3]
             win_prob = betting_model(input_tensor).item()  # scalar
 
         # Apply Kelly Criterion
@@ -79,6 +97,7 @@ def evaluate_nn_betting_agent(betting_model, playing_agent, env, episodes=1000, 
         kelly_fraction = max(kelly_fraction, 0)  # only bet if edge
         bet_fraction = min(kelly_fraction, 1)
         bet_amount = max(min_bet, round(bet_fraction * max_bet))
+        print(f"betting {bet_amount}")
 
         episode_reward = 0
         done = False
