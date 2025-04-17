@@ -430,3 +430,5 @@ class BlackjackEnv:
     def deliver_rewards(self):
         return self.rewards
 
+    def decks_remaining(self):
+        return len(self.deck.cards) / 52.0
