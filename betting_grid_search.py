@@ -9,16 +9,6 @@ from split_environment import BlackjackEnv
 from Supervised_betting import collect_dictionary, evaluate_nn_betting_agent
 from BettingModel import train_betting_nn
 
-def load_playing_agent(model_path="playing_model.pth"):
-    agent = DQNAgent(count_type="full")
-    env = BlackjackEnv(count_type="full")
-    checkpoint = torch.load(model_path, weights_only=False)
-    agent.policy_net.load_state_dict(checkpoint['policy_net_state_dict'])
-    agent.target_net.load_state_dict(checkpoint['target_net_state_dict'])
-    agent.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
-    agent.epsilon = checkpoint['epsilon']
-    return agent, env
-
 def betting_grid_search(playing_agent, env, count_types, dict_sizes, train_epochs, batch_sizes, episodes=2000, 
                         max_bet=1000, min_bet=1):
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
