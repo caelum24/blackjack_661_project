@@ -8,9 +8,9 @@ class BettingNN(nn.Module):
         self.model = nn.Sequential(
             nn.Linear(input_dim, 16),
             nn.ReLU(),
-            nn.Linear(16, 8),
+            nn.Linear(16, 16),
             nn.ReLU(),
-            nn.Linear(8, 1),
+            nn.Linear(16, 1),
             nn.Sigmoid()
         )
 
@@ -18,11 +18,19 @@ class BettingNN(nn.Module):
         return self.model(x)
 
 
-def train_betting_nn(dictionary, input_dim, epochs):
-    dataset = CountRewardDataset(dictionary)
-    dataloader = DataLoader(dataset, batch_size=128, shuffle=True)
+def train_betting_nn(dictionary, count_type, batch_size, epochs):
 
-    model = BettingNN(input_dim)
+    counting_type_state_size = {"full":10, "hi_lo":1, "zen":1, "uston_apc":1, "ten_count":1, "comb_counts":4}
+
+    if count_type not in ["full", "empty", "hi_lo", "zen", "uston_apc", "ten_count", "comb_counts"]:
+        print("count type must be one of", ["full", "empty", "hi_lo", "zen", "uston_apc", "ten_count", "comb_counts"])
+        raise ValueError 
+    state_size = counting_type_state_size[count_type]
+
+    dataset = CountRewardDataset(dictionary)
+    dataloader = DataLoader(dataset, batch_size, shuffle=True)
+
+    model = BettingNN(state_size)
     criterion = nn.MSELoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 
