@@ -3,6 +3,15 @@ import numpy as np
 
 INITIAL_BANKROLL = 1000
 
+
+'''
+
+NOTE THIS CODE IS DEPRECATED. SPLIT_TRAIN_AGENT AND SPLIT_ENVIRONMENT SHOULD BE USED INSTEAD UNLESS YOU DO NOT WANT SPLITTING
+
+
+'''
+
+
 class BlackjackEnv:
 
     # different card counting strategies and the values associated with each card
