@@ -1,11 +1,10 @@
 import torch
 import numpy as np
-from environment import BlackjackEnv
 from DQNAgent import DQNAgent
 from main import load_model
 from BettingAgent import BettingRLAgent
 from replay_buffer import ReplayBuffer
-from environment import BlackjackEnv
+from split_environment import BlackjackEnv
 
 def load_and_run_model(agent, env, num_episodes=1000):
     """
