@@ -1,0 +1,2 @@
+CountType,DictSize,Epochs,BatchSize,AvgProfit
+full,10000,10,64,-0.129
