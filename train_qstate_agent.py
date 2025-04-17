@@ -1,6 +1,6 @@
 
 from QStateAgent import QStateAgent
-from environment import BlackjackEnv
+from split_environment import BlackjackEnv
 from matplotlib import pyplot as plt
 import numpy as np
 from q_state_modeling import model
@@ -129,9 +129,9 @@ def evaluate_agent(agent, env, episodes=1000):
 
 
 if __name__ == "__main__":
-    agent = QStateAgent(state_size = 4, action_size = 3)
-    env = BlackjackEnv(num_decks = 6, count_type = "empty")
+    agent = QStateAgent(state_size = 4, action_size = 4)
+    env = BlackjackEnv(count_type = "empty")
 
-    train_q_agent(agent, env, episodes=100000, update_target_every=100, print_every=10000)
+    train_q_agent(agent, env, episodes=100000, update_target_every=10, print_every=10000)
     evaluate_agent(agent, env, episodes=10000)
     model(agent)
