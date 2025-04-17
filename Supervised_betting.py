@@ -21,7 +21,7 @@ def collect_dictionary(agent, env, count_type, num_episodes):
         elif count_type == "uston_apc":
             count_state = [env.uston_apc_count]
         elif count_type == "ten_count":
-            count_state = [env.ten_count]
+            count_state = [env.ten_count_count]
         elif count_type == "comb_counts":
             count_state = [env.hi_lo_count, env.zen_count, env.uston_apc_count, env.ten_count]
         elif count_type == "full":
