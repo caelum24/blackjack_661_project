@@ -20,6 +20,17 @@ with other models.
 """
 
 
+'''
+
+NOTE THIS CODE IS DEPRECATED. SPLIT_TRAIN_AGENT AND SPLIT_ENVIRONMENT SHOULD BE USED INSTEAD UNLESS YOU DO NOT WANT SPLITTING
+
+
+'''
+
+
+
+
+
 
 # TODO -> want to add input reward system for the trainer that is a hyperparameter
 
