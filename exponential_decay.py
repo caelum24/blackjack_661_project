@@ -28,8 +28,8 @@ class ExponentialDecayer:
 if __name__ == "__main__":
     # dec = EpsilonDecayer(decay_type="rbed", e_decay=0.001, reward_threshold= -1, reward_target = 0, reward_increment=0.001, alpha = 0.001)
     num_steps = 20000
-    strength = 7
-    dec = ExponentialDecayer(num_steps, strength, e_max=1, e_min=0.5)
+    strength = 2
+    dec = ExponentialDecayer(num_steps, strength, e_max=1, e_min=0.0)
     i = 0
     epsilons = []
     # while dec.reward_threshold < dec.reward_target:

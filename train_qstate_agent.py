@@ -4,9 +4,21 @@ from split_environment import BlackjackEnv
 from matplotlib import pyplot as plt
 import numpy as np
 from q_state_modeling import model
+from SplitTracker import SplitTracker
+from hyperparameters import HyperParameters
+from exponential_decay import ExponentialDecayer
+from RewardBonus import RewardBonus
 
 
-def train_q_agent(agent, env, episodes=100000, update_target_every=100, print_every=10000):
+
+def train_q_agent(agent, episodes=100000, update_target_every=100, print_every=10000):
+
+    # environment needs to embody the same counts as the agent
+    env = BlackjackEnv(count_type=agent.count_type)
+    epsilon_manager = ExponentialDecayer(episodes, decay_strength=HyperParameters.EPSILON_DECAY_STRENGTH, e_max=HyperParameters.EPSILON_START, e_min=HyperParameters.EPSILON_MIN)
+
+    ### Bonus Reward Stuff ###
+    bonus_manager = RewardBonus(episodes, decay_strength=HyperParameters.EPSILON_DECAY_STRENGTH+4, initial_bonuses=HyperParameters.BONUS_REWARDS)
 
     # Statistics
     bankroll_history = []
@@ -16,18 +28,23 @@ def train_q_agent(agent, env, episodes=100000, update_target_every=100, print_ev
     for e in range(episodes):
         state, reward, done = env.reset()
 
+        # if blackjack, can't do anything, so just skip to next episode
+        if state[0] == 21:
+            continue
+
         episode_loss = 0
         steps = 0
         cumulative_reward = 0
-        
-        while not done:
 
-            # Determine valid actions
-            valid_actions = [0, 1]  # Hit and stand are always valid
-            if state[3] == 1:  # Can double
-                valid_actions.append(2)
+        terminal_hand_states = []
+        split_tracker:SplitTracker = None
+        # done in [0,1,2] -> 0 = not done, 1 = hand done (for splitting), 2 = completely done
+        done = 0
+
+
+        while done != 2:
             
-            action = agent.act(state, valid_actions)
+            action = agent.act(state)
             next_state, reward, done = env.step(action)
 
             loss = agent.learn(state, action, reward, next_state, done)
