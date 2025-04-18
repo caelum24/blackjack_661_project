@@ -7,9 +7,9 @@ class HyperParameters:
     INITIAL_BANKROLL = 1000
     GAMMA = 0.9  # Discount factor
     MEMORY_SIZE = 50000  # Reduced replay buffer size for faster learning
-    BATCH_SIZE = 32  
+    BATCH_SIZE = 64
     EPSILON_START = 1.0
-    EPSILON_MIN = 0.01
+    EPSILON_MIN = 0.001
     EPSILON_DECAY_STRENGTH = 5
     EPSILON_DECAY = 0.98  # Slower epsilon decay
     LEARNING_RATE = 0.0001  # Increased learning rate for faster learning
