@@ -93,6 +93,11 @@ class BlackjackEnv:
                 reward = 1.5
                 # if the player has blackjack, we want to update the reward magnitudes
                 self.player_reward_magnitudes[self.current_hand_index] = reward
+            
+            # make sure to update the card counts for the dealer hand you never saw
+            self._update_card_counts(self.dealer_hand[0].value)
+            
+
 
             # got some blackjack at the beginning... done = 2
             return self._get_state(), reward, 2
@@ -306,7 +311,7 @@ class BlackjackEnv:
         player_hand = self.player_hands[self.current_hand_index]
 
         player_sum = self._calculate_hand_value(player_hand)
-        dealer_up_card = self.dealer_hand[0].numeric_value
+        dealer_up_card = self.dealer_hand[1].numeric_value
         usable_ace = self._usable_ace(player_hand)
         can_double = self._can_double()
         can_split = self._can_split()
