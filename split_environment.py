@@ -439,6 +439,9 @@ class BlackjackEnv:
     def deliver_rewards(self):
         return self.rewards
 
+    def decks_remaining(self):
+        return len(self.deck.cards) / 52.0
+
 if __name__ == "__main__":
     env = BlackjackEnv(count_type="full")
     done = False
@@ -454,3 +457,4 @@ if __name__ == "__main__":
 
 
 
+    
