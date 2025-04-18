@@ -99,12 +99,6 @@ class BlackjackEnv:
             
 
 
-            
-            # make sure to update the card counts for the dealer hand you never saw
-            self._update_card_counts(self.dealer_hand[0].value)
-            
-
-
             # got some blackjack at the beginning... done = 2
             return self._get_state(), reward, 2
 
@@ -392,7 +386,7 @@ class BlackjackEnv:
 
         # print(total_remaining, (self.initial_cards_per_value * 13 - sum(self.dealt_card_counts.values())))
         # if total_remaining != (self.initial_cards_per_value * 13 - sum(self.dealt_card_counts.values())):
-            # print(card_percentages)
+        #     print(card_percentages)
         # card percentages is array with percentage counts for: ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'A']
         # all face cards are rolled into 10 for this
         return np.array(card_percentages)
