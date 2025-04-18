@@ -44,7 +44,6 @@ def main():
     if args.load:
         # Load existing model
         agent, env = load_model(args.load, count_type=args.count_type)
-        update_every = min(1000 + (args.episodes // 100000) * 1000, 10000)
         # Continue training if requested
         if args.continue_training:
             print(f"Continuing training for {args.episodes} additional episodes...")

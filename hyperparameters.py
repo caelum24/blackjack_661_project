@@ -8,7 +8,7 @@ class HyperParameters:
     GAMMA = 0.9  # Discount factor
     MEMORY_SIZE = 1000  # Reduced replay buffer size for faster learning
     BATCH_SIZE = 64
-    EPSILON_START = 0.07 # for a training circumstance im doing, change this if you are starting over
+    EPSILON_START = 1.0 # for a training circumstance im doing, change this if you are starting over
     EPSILON_MIN = 0.001
     EPSILON_DECAY_STRENGTH = 5
     EPSILON_DECAY = 0.98  # Slower epsilon decay
