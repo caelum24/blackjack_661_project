@@ -18,7 +18,9 @@ class BettingNN(nn.Module):
         return self.model(x)
 
 
-def train_betting_nn(dictionary, count_type, batch_size, epochs):
+def train_betting_nn(dictionary, count_type, batch_size, epochs=100):
+
+    print_every = epochs//10
 
     counting_type_state_size = {"full":10, "hi_lo":1, "zen":1, "uston_apc":1, "ten_count":1, "comb_counts":4}
 
@@ -44,7 +46,8 @@ def train_betting_nn(dictionary, count_type, batch_size, epochs):
             optimizer.step()
             epoch_loss += loss.item() * inputs.size(0)
         avg_loss = epoch_loss / len(dataset)
-        print(f"Epoch {epoch+1}/{epochs}, Loss: {avg_loss:.4f}")
+        if epoch % print_every == 0:
+            print(f"Epoch {epoch+1}/{epochs}, Loss: {avg_loss:.4f}")
     return model
 
 class CountRewardDataset(Dataset):
