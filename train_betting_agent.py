@@ -1,11 +1,10 @@
 import torch
 import numpy as np
-from environment import BlackjackEnv
 from DQNAgent import DQNAgent
 from main import load_model
 from BettingAgent import BettingRLAgent
 from replay_buffer import ReplayBuffer
-from environment import BlackjackEnv
+from split_environment import BlackjackEnv
 
 def load_and_run_model(agent, env, num_episodes=1000):
     """
@@ -73,11 +72,11 @@ def train_betting_agent_from_run_data(run_data, possible_bets, state_dim=2, num_
         state_dim=state_dim,
         possible_bets=possible_bets,
         lr=1e-3,
-        gamma=0.99,
+        gamma=0.9,
         epsilon_start=1.0,
         epsilon_end=0.1,
-        epsilon_decay=1e-5,
-        buffer_capacity=10000,
+        epsilon_decay=0.9,
+        buffer_capacity=50000,
         batch_size=64,
         target_update_freq=200,
         device="cpu"
