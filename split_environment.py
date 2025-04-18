@@ -8,6 +8,7 @@ from hyperparameters import HyperParameters
 #       we don't know the reward yet for a split until after all hands have gone
 #TODO -> need to implement reward structure bonus
 
+# TODO -> Card counts off by 1 or 2 sometimes, but unsure as to why... could be due to temporal differences with dealer card facing down
 class BlackjackEnv:
 
     # different card counting strategies and the values associated with each card
@@ -56,7 +57,6 @@ class BlackjackEnv:
         # Check if we need to reshuffle before starting a new game
         if len(self.deck.cards) <= self.deck.num_decks * 52 * 0.25:
             # Reshuffle - reset the card counting as well
-            self.deck.cards = []
             self.deck.create_deck()
             self.deck.shuffle()
             
@@ -353,7 +353,7 @@ class BlackjackEnv:
 
         # Calculate number of remaining cards
         total_remaining = len(self.deck.cards)
-
+        # print(total_remaining)
         # Calculate card percentages based on what we know has been dealt
         card_percentages = []
 
@@ -363,19 +363,25 @@ class BlackjackEnv:
 
         for value in ['2', '3', '4', '5', '6', '7', '8', '9']:
             remaining = self.initial_cards_per_value - self.dealt_card_counts[value]
+            # print(remaining)
             percentage = remaining / total_remaining if total_remaining > 0 else 0
             card_percentages.append(percentage)
 
         # Add combined 10-value cards
         remaining_10s = (4 * self.initial_cards_per_value) - face_cards_dealt
         percentage_10s = remaining_10s / total_remaining if total_remaining > 0 else 0
+        # print(remaining_10s)
         card_percentages.append(percentage_10s)
 
         # Add Aces
         remaining_aces = self.initial_cards_per_value - self.dealt_card_counts['A']
         percentage_aces = remaining_aces / total_remaining if total_remaining > 0 else 0
+        # print(remaining_aces)
         card_percentages.append(percentage_aces)
 
+        print(total_remaining, (self.initial_cards_per_value * 13 - sum(self.dealt_card_counts.values())))
+        if total_remaining != (self.initial_cards_per_value * 13 - sum(self.dealt_card_counts.values())):
+            print(card_percentages)
         # card percentages is array with percentage counts for: ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'A']
         # all face cards are rolled into 10 for this
         return np.array(card_percentages)
@@ -384,7 +390,10 @@ class BlackjackEnv:
         
         # finish the dealer hand
         while self._calculate_hand_value(self.dealer_hand) < 17:
-            self.dealer_hand.append(self.deck.deal())
+            new_dealer_card = self.deck.deal()
+            self._update_card_counts(new_dealer_card.value)
+            self.dealer_hand.append(new_dealer_card)
+             
         dealer_val =  self._calculate_hand_value(self.dealer_hand)
 
         # IN THIS PART, WE NEED TO LOOK AT EVERY MAGNITUDE TO GET THE BANKROLL BASED ON THE BETS AND WINS/LOSSES
@@ -416,7 +425,7 @@ class BlackjackEnv:
             # total_reward += reward
 
         # finally, update the card counter to reflect the dealer's bottom card at the beginning
-        self._update_card_counts(self.dealer_hand[1].value)
+        self._update_card_counts(self.dealer_hand[0].value)
 
         # print statements for testing purposes
         # print([self._calculate_hand_value(x) for x in self.player_hands])
@@ -429,4 +438,19 @@ class BlackjackEnv:
 
     def deliver_rewards(self):
         return self.rewards
+
+if __name__ == "__main__":
+    env = BlackjackEnv(count_type="full")
+    done = False
+    for i in range(1000):
+        if done:
+            done = False
+            env._get_full_count_state()
+            state, _, done = env.reset()
+        else:
+            state, _, done = env.step(1)
+        # print(state)
+        # env._get_full_count_state()
+
+
 

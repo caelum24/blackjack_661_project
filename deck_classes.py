@@ -35,6 +35,7 @@ class Deck:
         self.shuffle()
 
     def create_deck(self):
+        self.cards = []
         suits = ['Hearts', 'Diamonds', 'Clubs', 'Spades']
         values = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A']
 
@@ -51,10 +52,4 @@ class Deck:
         return len(self.cards)/self.total_cards*self.num_decks
 
     def deal(self) -> Card:
-        if len(self.cards) <= self.num_decks * 52 * 0.25:  # Reshuffle when 75% of cards are used
-            # print("Reshuffling the deck...")
-            self.cards = []
-            self.create_deck()
-            self.shuffle()
-
         return self.cards.pop()
