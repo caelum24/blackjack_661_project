@@ -121,11 +121,13 @@ def train_agent(agent, episodes=10000, update_target_every=100, print_every=100)
                 agent.remember(split_state, action, reward, ret1_state, ret2_state, done=False)
                 # print("SPLITTING", split_state, action, reward, ret1_state, ret2_state)
 
-
+        
         # Update target network
         if e % update_target_every == 0:
             agent.update_target_network()
-
+        # Save model
+        if e % (episodes // 10) == 0:
+            save_model(agent, env, "checkpoint_finished_model" + str(e))
         # Store statistics
         bankroll_history.append(env.bankroll)
         reward_history.append(cumulative_reward)
