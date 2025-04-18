@@ -66,8 +66,6 @@ class DQNAgent:
     counting_type_state_size = {"full":15, "empty":5, "hi_lo":6, "zen":6, "uston_apc":6, "ten_count":6}
 
     def __init__(self, count_type):
-        
-        # TODO -> do we want to include the ability to exclude splitting?
         if count_type not in ["full", "empty", "hi_lo", "zen", "uston_apc", "ten_count"]:
             print("count type must be one of", ["full", "empty", "hi_lo", "zen", "uston_apc", "ten_count"])
             raise ValueError 
@@ -108,7 +106,7 @@ class DQNAgent:
         valid_actions = [0, 1]  # Hit and stand are always valid
         if state[3] == 1:  # Can double
             valid_actions.append(2)
-        if state[4] == 1:
+        if state[4] == 1: # can split
             valid_actions.append(3)
 
         if not eval and np.random.rand() <= self.epsilon:
@@ -126,26 +124,26 @@ class DQNAgent:
 
         return np.argmax(masked_values)
 
-    def bet(self, state):
-        #TODO -> this can go away because we're going to have a separate agent for betting
-        # Added Kelly Criterion to for the bet factor
-        win_prob = 0.3610
-        loss_prob = 0.5200
-        net_odds = 1.5
+    # def bet(self, state):
+    #     #TODO -> this can go away because we're going to have a separate agent for betting
+    #     # Added Kelly Criterion to for the bet factor
+    #     win_prob = 0.3610
+    #     loss_prob = 0.5200
+    #     net_odds = 1.5
 
-        kelly_fraction = (net_odds * win_prob - loss_prob) / net_odds
+    #     kelly_fraction = (net_odds * win_prob - loss_prob) / net_odds
 
-        kelly_fraction = min(1, max(kelly_fraction, 0))
+    #     kelly_fraction = min(1, max(kelly_fraction, 0))
 
-        # Using a separate neural network for betting would be better,
-        #if np.random.rand() <= self.epsilon:
-            #return np.random.uniform(0, 1)  # Random bet size factor between 0 and 1
+    #     # Using a separate neural network for betting would be better,
+    #     #if np.random.rand() <= self.epsilon:
+    #         #return np.random.uniform(0, 1)  # Random bet size factor between 0 and 1
 
-        # For exploration during training, add some noise to the bet
-        #noise = 0.1 * np.random.randn()
-        #bet_factor = state[5] + noise  # Use the previous bet as a starting point
-        #return max(0, min(1, bet_factor))  # Clip to [0, 1]
-        return kelly_fraction + 0.01 * np.random.randn()
+    #     # For exploration during training, add some noise to the bet
+    #     #noise = 0.1 * np.random.randn()
+    #     #bet_factor = state[5] + noise  # Use the previous bet as a starting point
+    #     #return max(0, min(1, bet_factor))  # Clip to [0, 1]
+    #     return kelly_fraction + 0.01 * np.random.randn()
 
     def learn(self):
         BATCH_SIZE = HyperParameters.BATCH_SIZE
