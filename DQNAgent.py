@@ -203,7 +203,22 @@ class DQNAgent:
         return loss.item()
     
     def load_model(self, weight_file):
-        self.target_net.load_state_dict(torch.load(weight_file))
+        """Load model weights from a file"""
+        checkpoint = torch.load(weight_file)
+        
+        # Check if this is a checkpoint with multiple components
+        if 'policy_net_state_dict' in checkpoint:
+            # It's a full checkpoint, extract components
+            self.policy_net.load_state_dict(checkpoint['policy_net_state_dict'])
+            self.target_net.load_state_dict(checkpoint['target_net_state_dict'])
+            self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+            self.epsilon = checkpoint['epsilon']
+        else:
+            # It's just a state dict for a single network
+            self.policy_net.load_state_dict(checkpoint)
+            self.target_net.load_state_dict(checkpoint)
+        
+        print(f"Model loaded from {weight_file}")
 
     def save_model(self):
         model_checkpoint = "BJ_agent.pt"
