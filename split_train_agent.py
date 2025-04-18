@@ -126,8 +126,8 @@ def train_agent(agent, episodes=10000, update_target_every=100, print_every=100)
         if e % update_target_every == 0:
             agent.update_target_network()
         # Save model
-        if e % (episodes // 10) == 0:
-            save_model(agent, env, "checkpoint_finished_model" + str(e))
+        if e % episodes-1 == 0:
+            save_model(agent, env, "finished_model_" + str(count_type))
         # Store statistics
         bankroll_history.append(env.bankroll)
         reward_history.append(cumulative_reward)
@@ -147,6 +147,9 @@ def train_agent(agent, episodes=10000, update_target_every=100, print_every=100)
         if e % print_every == 0:
             avg_loss = np.mean(loss_history[-print_every:]) if loss_history else 0
             print(f"Episode: {e}/{episodes}, Epsilon: {agent.epsilon:.2f}, Loss: {avg_loss:.4f}, Bankroll: {env.bankroll}, Reward: {cumulative_reward}")
+    
+    save_training_graphs(bankroll_history, reward_history, loss_history, count_type)
+    plt.close()
 
     return agent, env
 
@@ -184,17 +187,13 @@ def evaluate_agent(agent, env:BlackjackEnv, episodes=1000):
     # print(f"Push rate: {pushes / episodes:.4f}")
 
     # saving graphs stuff
-    graph_path = os.path.join('graphs', f'evaluation_results_{timestamp}.png')
-    plt.savefig(graph_path)
-    plt.close()
-    print(f"Evaluation graphs saved to {graph_path}")
-
+    
     return total_reward / episodes
 
 
 def save_model(agent, env, timestamp):
     """Save the trained model and environment state"""
-    model_path = os.path.join('models', f'blackjack_agent_{timestamp}.pth')
+    model_path = os.path.join('final_models_dc_2', f'blackjack_agent_{timestamp}.pth')
     torch.save({
         'policy_net_state_dict': agent.policy_net.state_dict(),
         'target_net_state_dict': agent.target_net.state_dict(),
@@ -237,16 +236,17 @@ def save_training_graphs(bankroll_history, reward_history, loss_history, timesta
         plt.grid(True)
 
     plt.tight_layout()
-    graph_path = os.path.join('graphs', f'training_results_{timestamp}.png')
+    graph_path = os.path.join('final_graphs_dc_2', f'evaluation_results_{count_type}.png')
     plt.savefig(graph_path)
     plt.close()
     print(f"Training graphs saved to {graph_path}")
 
 if __name__ == "__main__":
-
+    os.makedirs('final_models_dc_2', exist_ok=True)
+    os.makedirs('final_graphs_dc_2', exist_ok=True)
     # agent = DQNAgent(count_type="hi_lo")
     for count_type in ["empty", "hi_lo", "zen", "uston_apc", "ten_count"]:
-        agent = QStateAgent(count_type=count_type)
-        agent, env = train_agent(episodes=1000000, update_target_every=100, print_every=20000, agent=agent)
+        agent = DQNAgent(count_type=count_type)
+        agent, env = train_agent(episodes=5000000, update_target_every=300, print_every=20000, agent=agent)
         evaluate_agent(agent, env, episodes=100000)
         agent.save_model(f"{count_type}_q_state_learn_model.json")

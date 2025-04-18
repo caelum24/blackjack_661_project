@@ -379,9 +379,9 @@ class BlackjackEnv:
         # print(remaining_aces)
         card_percentages.append(percentage_aces)
 
-        print(total_remaining, (self.initial_cards_per_value * 13 - sum(self.dealt_card_counts.values())))
-        if total_remaining != (self.initial_cards_per_value * 13 - sum(self.dealt_card_counts.values())):
-            print(card_percentages)
+        # print(total_remaining, (self.initial_cards_per_value * 13 - sum(self.dealt_card_counts.values())))
+        # if total_remaining != (self.initial_cards_per_value * 13 - sum(self.dealt_card_counts.values())):
+            # print(card_percentages)
         # card percentages is array with percentage counts for: ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'A']
         # all face cards are rolled into 10 for this
         return np.array(card_percentages)

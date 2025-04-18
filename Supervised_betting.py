@@ -1,14 +1,11 @@
 import torch
 import numpy as np
-<<<<<<< Updated upstream
-=======
 from environment import BlackjackEnv
 from DQNAgent import DQNAgent
 from main import load_model
 from BettingAgent import BettingRLAgent
 from replay_buffer import ReplayBuffer
 from split_environment import BlackjackEnv
->>>>>>> Stashed changes
 
 def collect_dictionary(agent, env, count_type, num_episodes):
 
@@ -65,11 +62,13 @@ def evaluate_nn_betting_agent(betting_model, playing_agent, env, count_type, epi
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     betting_model.to(device)
 
-    # total_reward = 0
-    # wins = 0
-    # losses = 0
-    # pushes = 0
+    # Initialize these variables
+    total_reward = 0
+    wins = 0
+    losses = 0
+    pushes = 0
     
+    # Uncomment if you want to track these
     # max_win_prob = 0
     # max_win_state = None
     # min_win_prob = 1
@@ -97,10 +96,10 @@ def evaluate_nn_betting_agent(betting_model, playing_agent, env, count_type, epi
         betting_state = tuple(np.round(betting_state, 2))
 
         with torch.no_grad():
-            input_tensor = torch.tensor(betting_state, dtype=torch.float32).unsqueeze(0).to(device)  # shape [1, 3]
-            win_prob = betting_model(input_tensor).item()  # scalar
-            # print(input_tensor, win_prob)
+            input_tensor = torch.tensor(betting_state, dtype=torch.float32).unsqueeze(0).to(device)
+            win_prob = betting_model(input_tensor).item()
         
+        # Uncomment if you want to track these
         # if win_prob > max_win_prob:
         #     max_win_prob = win_prob
         #     max_win_state = betting_state
@@ -116,8 +115,6 @@ def evaluate_nn_betting_agent(betting_model, playing_agent, env, count_type, epi
         kelly_fraction = max(kelly_fraction, 0)  # only bet if edge
         bet_fraction = min(kelly_fraction, 1)
         bet_amount = max(min_bet, round(bet_fraction * max_bet))
-   
-        # print(f"betting {bet_amount}")
 
         episode_reward = 0
         done = False
@@ -138,6 +135,7 @@ def evaluate_nn_betting_agent(betting_model, playing_agent, env, count_type, epi
         else:
             pushes += 1
 
+    # Uncomment if you want to see these
     # print("MAX WIN PROB", max_win_state, max_win_prob)
     # print("MIN WIN PROB", min_win_state, min_win_prob)
 

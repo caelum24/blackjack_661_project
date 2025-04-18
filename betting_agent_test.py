@@ -10,32 +10,48 @@ from DQNAgent import DQNAgent
 from split_environment import BlackjackEnv
 from Supervised_betting import collect_dictionary
 from Supervised_betting import evaluate_nn_betting_agent
-from BettingModel import BettingNN
-from BettingModel import train_betting_nn
+from BettingModel import BettingNN, train_betting_nn, load_checkpoint
 import pickle
+import os
 
+# Load playing agent
 playing_agent = DQNAgent("full")
-# print(f"Training new model for {1000} episodes...")
-# playing_agent, env = train_agent(agent, episodes=100000, print_every=100)
-playing_agent.load_model("models/blackjack_agent_checkpoint_finished_model18000.pth")
+playing_agent.load_model("models/blackjack_agent_full_finished.pth")
+print("Model loaded from models/blackjack_agent_full_finished.pth")
+
+# Set up environment
 env = BlackjackEnv(count_type="full")
-dictionary = collect_dictionary(playing_agent, env, count_type="full", num_episodes=1000000)
-with open("count_reward_dict.pkl", "wb") as f:
-    pickle.dump(dictionary, f)
 
-#with open("count_reward_dict_10mil.pkl", "rb") as f:
-    #dictionary = pickle.load(f)
+# Load dictionary of count states and rewards
+with open("count_reward_dict.pkl", "rb") as f:
+    dictionary = pickle.load(f)
+
 count_type = "full"
-batch_size = "32"
-model = train_betting_nn(dictionary, count_type, batch_size, epochs=10000)
+batch_size = 128
 
-#run_data = load_and_run_model(playing_agent, env, num_episodes=50000)
-#possible_bets = [1, 2, 3, 4, 5, 10, 25, 50, 100]
-#betting_agent, loss_history = train_betting_agent_from_run_data(run_data, possible_bets, state_dim=2, num_training_steps=10000)
-#evaluate_agent(betting_agent, playing_agent, env, episodes=1000)
-#torch.save(betting_agent.policy_net.state_dict(), "betting_agent.pth")
+# Load previous checkpoint
+checkpoint_path = "checkpoints/full_20250418_135645_continued/final_model.pt"
+if os.path.exists(checkpoint_path):
+    print(f"Loading checkpoint from {checkpoint_path}")
+    loaded_model, checkpoint_data = load_checkpoint(checkpoint_path)
+    
+    # Continue training from checkpoint - pass the loaded model to the training function
+    print(f"Continuing training for 100 more epochs...")
+    model = train_betting_nn(
+        dictionary, 
+        count_type, 
+        batch_size, 
+        epochs=200,
+        sample_size=10000,
+        checkpoint_dir="checkpoints",
+        initial_model=loaded_model,
+        initial_checkpoint=checkpoint_data
+    )
+else:
+    print(f"Checkpoint {checkpoint_path} not found, training new model")
+    model = train_betting_nn(dictionary, count_type, batch_size, epochs=100)
 
-evaluate_nn_betting_agent(model, playing_agent, env, episodes = 1000, max_bet = 1000, min_bet = 1)
-
+# Evaluate the trained model
+evaluate_nn_betting_agent(model, playing_agent, env, count_type='full', episodes=1000, max_bet=1000, min_bet=1)
 
 print("Betting agent trained and saved.")
