@@ -14,6 +14,7 @@ from hyperparameters import HyperParameters
 from datetime import datetime
 from exponential_decay import ExponentialDecayer
 from RewardBonus import RewardBonus
+from QStateAgent import QStateAgent
 
 """
 Train agent and evaluate agent code. Import and use directly to print information and
@@ -92,6 +93,8 @@ def train_agent(agent, episodes=10000, update_target_every=100, print_every=100)
                 if loss:
                     episode_loss += loss
                     steps += 1
+            else:
+                steps+=1
 
             # switch state to the next step
             state = next_state
@@ -172,17 +175,17 @@ def evaluate_agent(agent, env:BlackjackEnv, episodes=1000):
         total_reward += episode_reward
         reward_history.append(episode_reward)
 
-    # print(f"Evaluation results over {episodes} episodes:")
-    # print(f"Average reward: {total_reward / episodes:.4f}")
+    print(f"Evaluation results over {episodes} episodes:")
+    print(f"Average reward: {total_reward / episodes:.4f}")
     # print(f"Win rate: {wins / episodes:.4f}")
     # print(f"Loss rate: {losses / episodes:.4f}")
     # print(f"Push rate: {pushes / episodes:.4f}")
 
     # saving graphs stuff
-    # graph_path = os.path.join('graphs', f'evaluation_results_{timestamp}.png')
-    # plt.savefig(graph_path)
-    # plt.close()
-    # print(f"Evaluation graphs saved to {graph_path}")
+    graph_path = os.path.join('graphs', f'evaluation_results_{timestamp}.png')
+    plt.savefig(graph_path)
+    plt.close()
+    print(f"Evaluation graphs saved to {graph_path}")
 
     return total_reward / episodes
 
@@ -239,5 +242,9 @@ def save_training_graphs(bankroll_history, reward_history, loss_history, timesta
 
 if __name__ == "__main__":
 
-    agent = DQNAgent(count_type="hi_lo")
-    train_agent(episodes=100, update_target_every=2, print_every=20, agent=agent)
+    # agent = DQNAgent(count_type="hi_lo")
+    for count_type in ["empty", "hi_lo", "zen", "uston_apc", "ten_count"]:
+        agent = QStateAgent(count_type=count_type)
+        agent, env = train_agent(episodes=1000000, update_target_every=100, print_every=20000, agent=agent)
+        evaluate_agent(agent, env, episodes=100000)
+        agent.save_model(f"{count_type}_q_state_learn_model.json")
