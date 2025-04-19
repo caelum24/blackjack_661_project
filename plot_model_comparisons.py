@@ -84,3 +84,47 @@ if __name__ == "__main__":
     input_folder = "final_models_dc_6"
     output_path = "final_models_dc_6/comp_plot.pdf"
     compare_agent_models(input_folder, output_path, include_basic=True)
+
+
+def compare_agent_models_everything(input_folder_dqn, input_folder_qstate, output_path, include_basic=True):
+
+    count_types = ['empty', 'hi_lo', 'zen', 'uston_apc', 'ten_count']
+
+    # Plot DQN agents
+    for count_type in count_types:
+        weight_file = f"{input_folder_dqn}/blackjack_agent_{count_type}_FINAL.pth"
+        agent = DQNAgent(count_type=count_type)
+        agent.update_epsilon(0.0)
+        agent.load_model(weight_file)
+        env = BlackjackEnv(num_decks=6, count_type=count_type)
+        total_reward_history, average_reward, win_rate, loss_rate, push_rate = evaluate_agent(agent, env, episodes=100000)
+        plt.plot(range(len(total_reward_history)), total_reward_history, label=f"DQN-{count_type}")
+        print(f"DQN-{count_type}: Ave Reward = {average_reward:.4f}, WR = {win_rate:.4f}, LR = {loss_rate:.4f}, PR = {push_rate:.4f}")
+
+    # Plot Q-state agents
+    for count_type in count_types:
+        weight_file = f"{input_folder_qstate}/q_state_blackjack_agent_{count_type}_FINAL.json"
+        agent = QStateAgent(count_type=count_type)
+        agent.update_epsilon(0.0)
+        agent.load_model(weight_file)
+        env = BlackjackEnv(num_decks=6, count_type=count_type)
+        total_reward_history, average_reward, win_rate, loss_rate, push_rate = evaluate_agent(agent, env, episodes=100000)
+        plt.plot(range(len(total_reward_history)), total_reward_history, linestyle='--', label=f"QState-{count_type}")
+        print(f"QState-{count_type}: Ave Reward = {average_reward:.4f}, WR = {win_rate:.4f}, LR = {loss_rate:.4f}, PR = {push_rate:.4f}")
+
+    # Include Basic Strategy
+    if include_basic:
+        agent = BasicStrategyAgent()
+        env = BlackjackEnv(num_decks=6, count_type="empty")
+        total_reward_history, average_reward, win_rate, loss_rate, push_rate = evaluate_agent(agent, env, episodes=100000)
+        plt.plot(range(len(total_reward_history)), total_reward_history, label="Basic Strategy", color="black")
+        print(f"Basic Strategy: Ave Reward = {average_reward:.4f}, WR = {win_rate:.4f}, LR = {loss_rate:.4f}, PR = {push_rate:.4f}")
+
+    plt.title("DQN vs Q-State Comparison Across Card Count Strategies")
+    plt.ylabel("Cumulative Reward")
+    plt.xlabel("Episodes")
+    plt.legend()
+    plt.grid(True)
+    plt.tight_layout()
+    plt.savefig(output_path)
+    plt.show()

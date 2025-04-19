@@ -1,9 +1,0 @@
-CountType,DictSize,Epochs,BatchSize,AvgProfit
-comb_counts,10000,10,32,-2.9485
-comb_counts,10000,10,64,-0.1245
-comb_counts,10000,50,32,-0.393
-comb_counts,10000,50,64,-1.7095
-comb_counts,50000,10,32,-0.1495
-comb_counts,50000,10,64,-0.1225
-comb_counts,50000,50,32,-0.2415
-comb_counts,50000,50,64,-0.142
