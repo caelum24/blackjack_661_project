@@ -82,5 +82,5 @@ def compare_agent_models(input_folder, output_path, include_basic = True):
 
 if __name__ == "__main__":
     input_folder = "final_models_dc_6"
-    output_path = "final_models_dc_6/comp_plot.png"
+    output_path = "final_models_dc_6/comp_plot.pdf"
     compare_agent_models(input_folder, output_path, include_basic=True)

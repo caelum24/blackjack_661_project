@@ -47,16 +47,16 @@ def main():
         # Continue training if requested
         if args.continue_training:
             print(f"Continuing training for {args.episodes} additional episodes...")
-            agent, env = train_agent(agent, episodes=args.episodes, print_every=100, update_target_every=300)
+            agent, env = train_agent(agent, episodes=args.episodes, print_every=100, update_target_every=30)
             timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-            save_model(agent, env, f"continued_training_{timestamp}")
+            save_model(agent, env, f"{agent.count_type}_FINAL")
     else:
         # Train new model
         print(f"Training new model for {args.episodes} episodes with {args.count_type} counting system...")
         agent = DQNAgent(args.count_type)
-        env = BlackjackEnv(count_type=args.count_type)
-        agent, env = train_agent(agent, episodes=args.episodes, print_every=100)
-        save_model(agent, env, "10m_model")
+        env = BlackjackEnv(num_decks=6, count_type=args.count_type)
+        agent, env = train_agent(agent, episodes=args.episodes, print_every=1000)
+        save_model(agent, env, f"{agent.count_type}_FINAL")
 
     # Evaluate and visualize the model
     model(agent)
