@@ -9,140 +9,125 @@ from hyperparameters import HyperParameters
 from exponential_decay import ExponentialDecayer
 from RewardBonus import RewardBonus
 
+# q_state_train.py  ── dedicate loop for tabular Q‑learning
+import os
+import numpy as np
+import matplotlib.pyplot as plt
+
+from split_environment import BlackjackEnv
+from SplitTracker        import SplitTracker
+from exponential_decay   import ExponentialDecayer
+from RewardBonus         import RewardBonus
+from hyperparameters     import HyperParameters
+from QStateAgent         import QStateAgent
 
 
-def train_q_agent(agent, episodes=100000, update_target_every=100, print_every=10000):
+def train_q_agent(agent: QStateAgent,
+                  episodes: 200000,
+                  update_target_every = 200,
+                  print_every = 10000,
+                  save_dir= "final_models_dc_2"):
+    """
+    Train QStateAgent.
+    Splitting is handled through SplitTracker and the agents
+    """
 
-    # environment needs to embody the same counts as the agent
+    os.makedirs(save_dir, exist_ok=True)
+
     env = BlackjackEnv(count_type=agent.count_type)
-    epsilon_manager = ExponentialDecayer(episodes, decay_strength=HyperParameters.EPSILON_DECAY_STRENGTH, e_max=HyperParameters.EPSILON_START, e_min=HyperParameters.EPSILON_MIN)
 
-    ### Bonus Reward Stuff ###
-    bonus_manager = RewardBonus(episodes, decay_strength=HyperParameters.EPSILON_DECAY_STRENGTH+4, initial_bonuses=HyperParameters.BONUS_REWARDS)
+    eps_mgr   = ExponentialDecayer(episodes,
+                                   decay_strength=HyperParameters.EPSILON_DECAY_STRENGTH,
+                                   e_max=HyperParameters.EPSILON_START,
+                                   e_min=HyperParameters.EPSILON_MIN)
 
-    # Statistics
-    bankroll_history = []
-    reward_history = []
-    loss_history = []
+    bonus_mgr = RewardBonus(episodes,
+                            decay_strength=HyperParameters.EPSILON_DECAY_STRENGTH + 4,
+                            initial_bonuses=HyperParameters.BONUS_REWARDS)
 
-    for e in range(episodes):
-        state, reward, done = env.reset()
+    bankroll_hist, reward_hist, loss_hist = [], [], []
 
-        # if blackjack, can't do anything, so just skip to next episode
-        if state[0] == 21:
+    for ep in range(1, episodes + 1):
+        state, _, _ = env.reset()
+        if state[0] == 21:          # skip natural BJ
             continue
 
-        episode_loss = 0
-        steps = 0
-        cumulative_reward = 0
+        split_tracker = None
+        terminal_buffer = []        # (s, a, r, s', split_s', done)
 
-        terminal_hand_states = []
-        split_tracker:SplitTracker = None
-        # done in [0,1,2] -> 0 = not done, 1 = hand done (for splitting), 2 = completely done
-        done = 0
-
+        done, ep_loss, steps = 0, 0.0, 0
 
         while done != 2:
-            
             action = agent.act(state)
             next_state, reward, done = env.step(action)
 
-            loss = agent.learn(state, action, reward, next_state, done)
+            reward += bonus_mgr.get_bonus(action)    # optional shaping
 
-            episode_loss += loss
-            steps += 1
+            if action == 3:                          # chose to split
+                if split_tracker is None:
+                    split_tracker = SplitTracker(state)
+                split_tracker.split(next_state)
+
+            elif done != 0:   
+
+                terminal_buffer.append( (state, action, reward,
+                                          next_state, np.zeros_like(next_state), True) )
+                if done == 1:
+                    split_tracker.switch_hand(next_state)
+            else:
+                step_loss = agent.learn(state, action, reward,
+                                        next_state, np.zeros_like(next_state), done=False)
+                ep_loss += step_loss
+
             state = next_state
-            cumulative_reward += reward
+            steps += 1
 
-        if e % update_target_every == 0:
+        # final dealer result
+        hand_rewards = env.deliver_rewards() 
+        total_reward = sum(hand_rewards)
+
+        # learn from buffered terminal states
+        for i,(s,a,r,sn,split_n,_) in enumerate(terminal_buffer):
+            final_r = r + hand_rewards[i]
+            step_loss = agent.learn(s,a,final_r,sn,split_n,done=True)
+            ep_loss += step_loss
+
+        if split_tracker is not None:
+            for split_s, (h1_s, h2_s) in split_tracker.get_split_next_hands():
+                bonus_r = bonus_mgr.get_bonus(3) 
+                agent.learn(split_s, 3, bonus_r,
+                            h1_s, h2_s, done=False)
+
+        bankroll_hist.append(env.bankroll)
+        reward_hist.append(total_reward)
+        loss_hist.append(ep_loss / max(steps,1))
+
+        eps_mgr.decay_epsilon()
+        agent.update_epsilon(eps_mgr.get_epsilon())
+
+        if ep % update_target_every == 0:
             agent.update_target_q_table()
 
-        # Store statistics
-        bankroll_history.append(env.bankroll)
-        reward_history.append(cumulative_reward)
-        if steps > 0:
-            loss_history.append(episode_loss / steps)
-        else:
-            loss_history.append(0)
+        if ep % print_every == 0:
+            print(f"[{ep:>8}/{episodes}]  ε={agent.epsilon:.3f} "
+                  f"Δloss={ep_loss/steps:.4f}  Δreward={total_reward:+.2f} "
+                  f"bankroll={env.bankroll}")
 
-        if e % print_every == 0:
-            print(f"Episode: {e}/{episodes}, Epsilon: {agent.epsilon:.2f}, Bankroll: {env.bankroll}, Reward: {cumulative_reward}")
+    plt.figure(figsize=(14,4))
+    plt.subplot(1,3,1); plt.plot(bankroll_hist); plt.title("Bankroll")
+    plt.subplot(1,3,2); plt.plot(np.convolve(reward_hist, np.ones(500)/500, 'valid'));
+    plt.title("Reward (rolling 500)")
+    plt.subplot(1,3,3); plt.plot(loss_hist); plt.title("Per‑step loss")
+    plt.tight_layout(); plt.show()
 
-    plt.figure(figsize=(10, 5))
-    plt.subplot(1, 3, 1)
-    plt.plot(bankroll_history)
-    plt.title('Bankroll History')
-    plt.xlabel('Episode')
-    plt.ylabel('Bankroll')
-
-    plt.subplot(1, 3, 2)
-    rolling_avg = np.convolve(reward_history, np.ones(100)/100, mode='valid')
-    plt.plot(rolling_avg)
-    plt.title('Average Reward (100 episodes)')
-    plt.xlabel('Episode')
-    plt.ylabel('Reward')
-
-    plt.subplot(1, 3, 3)
-    rolling_avg = np.convolve(reward_history, np.ones(100)/100, mode='valid')
-    plt.plot(rolling_avg)
-    plt.title('Loss History')
-    plt.xlabel('Episode')
-    plt.ylabel('Loss')
-
-    plt.tight_layout()
-    plt.savefig('q_learning_blackjack_training.png')
-    plt.show()
+    # optional: save the learned table
+    agent.save_model(os.path.join(save_dir,
+                     f"{agent.count_type}_q_state_learn_model.json"))
 
     return agent, env
 
+    
 
-def evaluate_agent(agent, env, episodes=1000):
-    """Evaluate the trained agent's performance"""
-    total_reward = 0
-    wins = 0
-    losses = 0
-    pushes = 0
-
-    for e in range(episodes):
-        state, _, _ = env.reset()
-
-        # Place a bet
-        # bet_size_factor = agent.bet(state)
-        # state, _, _ = env.place_bet(bet_size_factor)
-
-        episode_reward = 0
-        done = False
-
-        while not done:
-            # Determine valid actions
-            valid_actions = [0, 1]  # Hit and stand are always valid
-            if state[3] == 1:  # Can double
-                valid_actions.append(2)
-
-            # Take action (no random exploration during evaluation)
-            action = agent.act(state, valid_actions=valid_actions)
-
-            next_state, reward, done = env.step(action)
-
-            state = next_state
-            episode_reward += reward
-
-        total_reward += episode_reward
-
-        if episode_reward > 0:
-            wins += 1
-        elif episode_reward < 0:
-            losses += 1
-        else:
-            pushes += 1
-
-    print(f"Evaluation results over {episodes} episodes:")
-    print(f"Average reward: {total_reward / episodes:.4f}")
-    print(f"Win rate: {wins / episodes:.4f}")
-    print(f"Loss rate: {losses / episodes:.4f}")
-    print(f"Push rate: {pushes / episodes:.4f}")
-
-    return total_reward / episodes
 
 
 if __name__ == "__main__":

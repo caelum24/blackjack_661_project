@@ -7,6 +7,7 @@ from hyperparameters import HyperParameters
 from collections import defaultdict
 from epsilon_decayer import EpsilonDecayer
 import json
+import ast
 
 # TODO -> implement the Epsilon Decayer
 
@@ -121,20 +122,23 @@ class QStateAgent:
         return loss
 
     
-    def load_model(self, q_table_file):
-        with open(q_table_file, 'r') as f:
-            loaded_q_table = json.load(f)
+    def _to_jsonable(self, qdict):
+        # {tuple: np.array}  →  {str: list}
+        return {str(k): v.tolist() for k, v in qdict.items()}
 
-        self.q_table = loaded_q_table
+    def _from_jsonable(self, raw):
+        # {str: list}  →  {tuple: np.array}
+        return {tuple(ast.literal_eval(k)): np.array(v) for k, v in raw.items()}
+    # ------------------------------------------------------------------------
 
-    def save_model(self, filename = None):
-        if filename is not None:
-            filename = filename
-        else:
-            filename = "qtrain_model_checkpoint"
-
-        # save the dictionary into the file
+    def save_model(self, filename="qtrain_model_checkpoint.json"):
         with open(filename, "w") as f:
-            json.dump(self.target_q_table, f)
+            json.dump(self._to_jsonable(self.target_q_table), f)
+        print(f"✓ Q‑table saved to {filename}")
 
-
+    def load_model(self, filename):
+        with open(filename, "r") as f:
+            raw = json.load(f)
+        self.q_table = self._from_jsonable(raw)
+        self.update_target_q_table()
+        print(f"✓ Q‑table loaded from {filename}")
