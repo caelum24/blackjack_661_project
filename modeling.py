@@ -146,6 +146,7 @@ def model(agent):
             for dealer_upcard in range(2, 12):  # 2 to 11 (Ace)
                 # Create a synthetic state with simplified features
                 # [player_sum, dealer_up_card, usable_ace, can_double, can_split]
+                #TODO -> full will error out
                 state = np.array([player_total, dealer_upcard, 0, 1, 0])
 
                 # Add card counting information based on agent's count_type

@@ -23,21 +23,31 @@ class DuelingDQN(nn.Module):
             nn.Linear(state_size, 64),
             nn.ReLU(),
             nn.Linear(64, 64),
+            nn.ReLU(),
+            nn.Linear(64, 64),
             nn.ReLU()
         )
         
         # Value stream
         self.value_stream = nn.Sequential(
+            nn.Linear(64, 64),
+            nn.ReLU(),
             nn.Linear(64, 32),
             nn.ReLU(),
-            nn.Linear(32, 1)
+            nn.Linear(32, 16),
+            nn.ReLU(),
+            nn.Linear(16, 1)
         )
         
         # Advantage stream
         self.advantage_stream = nn.Sequential(
+            nn.Linear(64, 64),
+            nn.ReLU(),
             nn.Linear(64, 32),
             nn.ReLU(),
-            nn.Linear(32, action_size)
+            nn.Linear(32, 16),
+            nn.ReLU(),
+            nn.Linear(16, action_size)
         )
         
     def forward(self, x, training=True):
@@ -204,7 +214,7 @@ class DQNAgent:
     
     def load_model(self, weight_file):
         """Load model weights from a file"""
-        checkpoint = torch.load(weight_file)
+        checkpoint = torch.load(weight_file, weights_only=False)
         
         # Check if this is a checkpoint with multiple components
         if 'policy_net_state_dict' in checkpoint:

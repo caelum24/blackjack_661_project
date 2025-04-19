@@ -127,7 +127,7 @@ def train_agent(agent, episodes=10000, update_target_every=100, print_every=100)
             agent.update_target_network()
         # Save model
         if e % (episodes // 10) == 0:
-            save_model(agent, env, "checkpoint_finished_model" + str(e))
+            save_model(agent, env, "finished_model_" + str(agent.count_type))
         # Store statistics
         bankroll_history.append(env.bankroll)
         reward_history.append(cumulative_reward)
@@ -194,7 +194,7 @@ def evaluate_agent(agent, env:BlackjackEnv, episodes=1000):
 
 def save_model(agent, env, timestamp):
     """Save the trained model and environment state"""
-    model_path = os.path.join('models', f'blackjack_agent_{timestamp}.pth')
+    model_path = os.path.join('final_models_dc_6', f'blackjack_agent_{timestamp}.pth')
     torch.save({
         'policy_net_state_dict': agent.policy_net.state_dict(),
         'target_net_state_dict': agent.target_net.state_dict(),
@@ -245,8 +245,13 @@ def save_training_graphs(bankroll_history, reward_history, loss_history, timesta
 if __name__ == "__main__":
 
     # agent = DQNAgent(count_type="hi_lo")
-    for count_type in ["empty", "hi_lo", "zen", "uston_apc", "ten_count"]:
-        agent = QStateAgent(count_type=count_type)
-        agent, env = train_agent(episodes=1000000, update_target_every=100, print_every=20000, agent=agent)
-        evaluate_agent(agent, env, episodes=100000)
-        agent.save_model(f"{count_type}_q_state_learn_model.json")
+    # for count_type in ["empty", "hi_lo", "zen", "uston_apc", "ten_count"]:
+    #     agent = QStateAgent(count_type=count_type)
+    #     agent, env = train_agent(episodes=1000000, update_target_every=100, print_every=20000, agent=agent)
+    #     evaluate_agent(agent, env, episodes=100000)
+    #     agent.save_model(f"{count_type}_q_state_learn_model.json")
+
+    agent = DQNAgent(count_type="hi_lo")
+    agent.load_model("models/blackjack_agent_hi_lo_FINAL.pth")
+    env = BlackjackEnv(count_type=agent.count_type)
+    evaluate_agent(agent, env, episodes=100000)
