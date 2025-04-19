@@ -2,3 +2,4 @@ __pycache__
 models/old_models
 graphs/count_reward_dict.pkl
 count_reward_dict.pkl
+checkpoints
