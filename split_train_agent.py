@@ -24,7 +24,7 @@ Train agent is set up to run with the DQNAgent for now, might need to make modif
 with other models. 
 """
 
-def train_agent(agent, episodes=10000, update_target_every=100, print_every=100):
+def train_agent(agent, episodes=10000, update_target_every=100, print_every=100, count_type="full"):
     
     # environment needs to embody the same counts as the agent
     env = BlackjackEnv(count_type=agent.count_type)
@@ -240,13 +240,12 @@ def save_training_graphs(bankroll_history, reward_history, loss_history, timesta
     plt.savefig(graph_path)
     plt.close()
     print(f"Training graphs saved to {graph_path}")
-
+ 
 if __name__ == "__main__":
     os.makedirs('final_models_dc_2', exist_ok=True)
     os.makedirs('final_graphs_dc_2', exist_ok=True)
     # agent = DQNAgent(count_type="hi_lo")
-    for count_type in ["empty", "hi_lo", "zen", "uston_apc", "ten_count"]:
+    for count_type in ["hi_lo", "zen", "uston_apc", "ten_count"]:
         agent = DQNAgent(count_type=count_type)
-        agent, env = train_agent(episodes=5000000, update_target_every=300, print_every=20000, agent=agent)
+        agent, env = train_agent(episodes=100000, update_target_every=300, print_every=20000, agent=agent, count_type=count_type)
         evaluate_agent(agent, env, episodes=100000)
-        agent.save_model(f"{count_type}_q_state_learn_model.json")
