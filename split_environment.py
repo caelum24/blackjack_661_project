@@ -96,8 +96,6 @@ class BlackjackEnv:
             
             # make sure to update the card counts for the dealer hand you never saw
             self._update_card_counts(self.dealer_hand[0].value)
-            
-
 
             # got some blackjack at the beginning... done = 2
             return self._get_state(), reward, 2

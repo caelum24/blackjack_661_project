@@ -47,7 +47,7 @@ def main():
         # Continue training if requested
         if args.continue_training:
             print(f"Continuing training for {args.episodes} additional episodes...")
-            agent, env = train_agent(agent, episodes=args.episodes, print_every=100, update_target_every=30)
+            agent, env = train_agent(agent, episodes=args.episodes, print_every=100, update_target_every=300)
             timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
             save_model(agent, env, f"{agent.count_type}_FINAL")
     else:

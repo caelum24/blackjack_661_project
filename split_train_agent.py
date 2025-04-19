@@ -24,7 +24,7 @@ Train agent is set up to run with the DQNAgent for now, might need to make modif
 with other models. 
 """
 
-def train_agent(agent, episodes=10000, update_target_every=100, print_every=100):
+def train_agent(agent, episodes=10000, update_target_every=100, print_every=100, count_type="full"):
     
     # environment needs to embody the same counts as the agent
     env = BlackjackEnv(count_type=agent.count_type)
@@ -126,8 +126,8 @@ def train_agent(agent, episodes=10000, update_target_every=100, print_every=100)
         if e % update_target_every == 0:
             agent.update_target_network()
         # Save model
-        if e % (episodes // 10) == 0:
-            save_model(agent, env, "finished_model_" + str(agent.count_type))
+        if e % episodes-1 == 0:
+            save_model(agent, env, "finished_model_" + str(count_type))
         # Store statistics
         bankroll_history.append(env.bankroll)
         reward_history.append(cumulative_reward)
@@ -147,6 +147,9 @@ def train_agent(agent, episodes=10000, update_target_every=100, print_every=100)
         if e % print_every == 0:
             avg_loss = np.mean(loss_history[-print_every:]) if loss_history else 0
             print(f"Episode: {e}/{episodes}, Epsilon: {agent.epsilon:.2f}, Loss: {avg_loss:.4f}, Bankroll: {env.bankroll}, Reward: {cumulative_reward}")
+    
+    save_training_graphs(bankroll_history, reward_history, loss_history, count_type)
+    plt.close()
 
     return agent, env
 
@@ -194,7 +197,8 @@ def evaluate_agent(agent, env:BlackjackEnv, episodes=1000):
 
 def save_model(agent, env, timestamp):
     """Save the trained model and environment state"""
-    model_path = os.path.join('final_models_dc_6', f'blackjack_agent_{timestamp}.pth')
+    # model_path = os.path.join('final_models_dc_6', f'blackjack_agent_{timestamp}.pth')
+    model_path = os.path.join('final_models_dc_2', f'blackjack_agent_{timestamp}.pth')
     torch.save({
         'policy_net_state_dict': agent.policy_net.state_dict(),
         'target_net_state_dict': agent.target_net.state_dict(),
@@ -237,11 +241,11 @@ def save_training_graphs(bankroll_history, reward_history, loss_history, timesta
         plt.grid(True)
 
     plt.tight_layout()
-    graph_path = os.path.join('graphs', f'training_results_{timestamp}.png')
+    graph_path = os.path.join('final_graphs_dc_2', f'evaluation_results_{count_type}.png')
     plt.savefig(graph_path)
     plt.close()
     print(f"Training graphs saved to {graph_path}")
-
+ 
 if __name__ == "__main__":
 
     # agent = DQNAgent(count_type="hi_lo")
@@ -251,6 +255,8 @@ if __name__ == "__main__":
     #     evaluate_agent(agent, env, episodes=100000)
     #     agent.save_model(f"{count_type}_q_state_learn_model.json")
 
+    # os.makedirs('final_models_dc_2', exist_ok=True)
+    # os.makedirs('final_graphs_dc_2', exist_ok=True)
     agent = DQNAgent(count_type="hi_lo")
     agent.load_model("models/blackjack_agent_hi_lo_FINAL.pth")
     env = BlackjackEnv(count_type=agent.count_type)

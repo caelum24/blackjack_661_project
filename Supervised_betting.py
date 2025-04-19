@@ -1,14 +1,11 @@
 import torch
 import numpy as np
-<<<<<<< Updated upstream
-=======
 from environment import BlackjackEnv
 from DQNAgent import DQNAgent
 from main import load_model
 from BettingAgent import BettingRLAgent
 from replay_buffer import ReplayBuffer
 from split_environment import BlackjackEnv
->>>>>>> Stashed changes
 
 def collect_dictionary(agent, env, count_type, num_episodes):
 
@@ -65,11 +62,13 @@ def evaluate_nn_betting_agent(betting_model, playing_agent, env, count_type, epi
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     betting_model.to(device)
 
-    # total_reward = 0
-    # wins = 0
-    # losses = 0
-    # pushes = 0
+    # Initialize these variables
+    total_reward = 0
+    wins = 0
+    losses = 0
+    pushes = 0
     
+    # Uncomment if you want to track these
     # max_win_prob = 0
     # max_win_state = None
     # min_win_prob = 1
