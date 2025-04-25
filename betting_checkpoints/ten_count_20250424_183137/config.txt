@@ -1,0 +1,10 @@
+count_type: ten_count
+batch_size: 64
+epochs: 100
+sample_size: 10000
+learning_rate: 0.001
+weight_decay: 1e-05
+state_size: 1
+dataset_size: 102
+continued_from_checkpoint: False
+starting_epoch: 0

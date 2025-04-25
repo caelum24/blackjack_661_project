@@ -28,7 +28,7 @@ def collect_dictionary(agent, env, count_type, num_episodes):
         elif count_type == "full":
             count_state = env._get_full_count_state()
 
-        count_state = tuple(np.round(count_state, 0))
+        count_state = tuple(np.round(count_state, 2))
         # print(count_state)
 
         while done != 2:

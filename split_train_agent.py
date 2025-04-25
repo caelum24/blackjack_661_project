@@ -148,7 +148,6 @@ def train_agent(agent, episodes=10000, update_target_every=100, print_every=100,
             avg_loss = np.mean(loss_history[-print_every:]) if loss_history else 0
             print(f"Episode: {e}/{episodes}, Epsilon: {agent.epsilon:.2f}, Loss: {avg_loss:.4f}, Bankroll: {env.bankroll}, Reward: {cumulative_reward}")
     
-    save_training_graphs(bankroll_history, reward_history, loss_history, count_type)
     plt.close()
 
     return agent, env
@@ -187,7 +186,7 @@ def evaluate_agent(agent, env:BlackjackEnv, episodes=1000):
     # print(f"Push rate: {pushes / episodes:.4f}")
 
     # saving graphs stuff
-    graph_path = os.path.join('graphs', f'evaluation_results_{timestamp}.png')
+    graph_path = os.path.join('graphs', f'evaluation_results_.png')
     plt.savefig(graph_path)
     plt.close()
     print(f"Evaluation graphs saved to {graph_path}")
@@ -241,7 +240,7 @@ def save_training_graphs(bankroll_history, reward_history, loss_history, timesta
         plt.grid(True)
 
     plt.tight_layout()
-    graph_path = os.path.join('final_graphs_dc_2', f'evaluation_results_{count_type}.png')
+    graph_path = os.path.join('final_graphs_dc_2', f'evaluation_results_.png')
     plt.savefig(graph_path)
     plt.close()
     print(f"Training graphs saved to {graph_path}")
